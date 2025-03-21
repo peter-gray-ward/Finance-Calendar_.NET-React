@@ -34,6 +34,23 @@ export interface ModalItem {
     route: string;
 }
 
+export interface Day {
+    date: number;
+    name: string;
+    events: Event[];
+    year: number;
+    month: number;
+    isTodayOrLater: boolean;
+    isToday: boolean;
+    total: number;
+}
+
+export interface ApiResponse {
+    error?: string;
+    message?: string;
+    data?: any;
+}
+
 export const ChatModalItems: ModalItem[] = [
     {
         label: 'Profile',

@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import './App.scss';
-import { User, DOW, MONTHNAMES } from './types';
+import { User, DOW, MONTHNAMES, Day, ApiResponse } from './types';
 import Modal from './Modal';
 import { xhr, capitalizeKeys } from './util';
 import * as signalR from '@microsoft/signalr';
@@ -13,6 +13,7 @@ function App({ user }: { user: User }) {
   const [pagePositions, setPagePositions] = useState({
     eventOrigin: { top: 0, left: 0 }
   });
+  const [calendar, setCalendar] = useState<Day[][]>([]);
   const eventOriginRef = useRef<HTMLElement | null>(null);
 
   const handleResize = () => {
@@ -24,12 +25,25 @@ function App({ user }: { user: User }) {
     });
   };
 
+  const getCalendar = useCallback(() => {
+    xhr({
+      method: 'GET',
+      url: '/get-calendar'
+    }).then((res: ApiResponse) => {
+      console.log("get-calendar", res);
+    }); 
+  }, []);
+
   useEffect(() => {
     window.addEventListener('resize', handleResize);
     // clean up the event on unmount
     return () => {
       window.removeEventListener('resize', handleResize);
     };
+  }, []);
+
+  useEffect(() => {
+    getCalendar();
   }, []);
 
   const clickMain = useCallback((event: any) => {
@@ -39,6 +53,10 @@ function App({ user }: { user: User }) {
   const changeMonth = useCallback((which: number) => {
 
   }, []);
+
+  if (!user || !user.account) {
+    debugger
+  }
 
 
   return <main id="main" onClick={clickMain}>

@@ -120,6 +120,37 @@ namespace FinanceCalendar
         }
 
         [Authorize]
+        [HttpGet]
+        [Route("get-calendar")]
+        public IActionResult GetCalendar(Calendar calendar)
+        {
+            var token = Request.Cookies["finance-calendar-jwt"];
+            if (string.IsNullOrEmpty(token))
+            {
+                return Unauthorized(new ApiResponse<User>("Token not found.", "Unauthorized", null));
+            }
+
+            var account = _tokenService.DecodeToken(token);
+            var user = _context.Users.SingleOrDefault(u => u.Id == account.UserId);
+            if (user == null)
+            {
+                return Unauthorized(new ApiResponse<User>("Token not found.", "Unauthorized", null));
+            }
+
+            DateTime currentMonth = new DateTime(account.Year, account.Month, 1);
+            DateTime previousMonth = currentMonth.AddMonths(-1);
+            DateTime nextMonth = currentMonth.AddMonths(2);
+
+            var events = _context.Events
+                .Where(e => e.UserId == user.Id && e.Date >= previousMonth && e.Date < nextMonth)
+                .ToList();
+            
+            var weeks = calendar.GetWeeks(user, account.Month, account.Year, new List<Event>());
+
+            return Ok(new ApiResponse<object>("Calendar retrieved successfully.", null, weeks));
+        }
+
+        [Authorize]
         [HttpPost]
         [Route("update-month")]
         public IActionResult UpdateMonth([FromBody] int month)

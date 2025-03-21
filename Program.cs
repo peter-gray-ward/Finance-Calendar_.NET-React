@@ -30,6 +30,7 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddControllers();
 builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<Calendar>();
 
 builder.Services.AddDbContext<FinanceCalendarContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));

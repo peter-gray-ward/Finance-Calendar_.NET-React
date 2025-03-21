@@ -30,8 +30,8 @@ namespace FinanceCalendar
         public Guid Id { get; set; } = Guid.NewGuid();
         public Guid RecurrenceId { get; set; } = Guid.NewGuid();
         public string Summary { get; set; } = string.Empty;
-        public DateTime Date { get; set; } = DateTime.Now;
-        public DateTime RecurrenceEndDate { get; set; } = DateTime.Now;
+        public DateTime Date { get; set; } = DateTime.UtcNow;
+        public DateTime RecurrenceEndDate { get; set; } = DateTime.UtcNow;
         public decimal Amount { get; set; } = 0.0m;
         public decimal Total { get; set; } = 0.0m;
         public decimal Balance { get; set; } = 0.0m;
@@ -49,8 +49,8 @@ namespace FinanceCalendar
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty;
         public decimal Amount { get; set; } = 0.0m;
-        public DateTime StartDate { get; set; } = DateTime.Now;
-        public DateTime RecurrenceEndDate { get; set; } = DateTime.Now;
+        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+        public DateTime RecurrenceEndDate { get; set; } = DateTime.UtcNow;
         public string Frequency { get; set; } = string.Empty;
 
         [ForeignKey("User")]
@@ -62,8 +62,9 @@ namespace FinanceCalendar
         [Key]
         public Guid UserId { get; set; }
         public List<Expense> Expenses { get; set; } = new List<Expense>();
-        public int Month { get; set; } = DateTime.Now.Month;
-        public int Year { get; set; } = DateTime.Now.Year;
+        public List<Event> Calendar { get; set; } = new List<Event>();
+        public int Month { get; set; } = DateTime.UtcNow.Month;
+        public int Year { get; set; } = DateTime.UtcNow.Year;
     }
 
     public class Authentication
@@ -75,11 +76,11 @@ namespace FinanceCalendar
 
     public class Day
     {
-        public int Date { get; set; } = DateTime.Now.Day;
+        public int Date { get; set; } = DateTime.UtcNow.Day;
         public string Name { get; set; } = string.Empty;
         public List<Event> Events { get; set; } = new List<Event>();
-        public int Year { get; set; } = DateTime.Now.Year;
-        public int Month { get; set; } = DateTime.Now.Month;
+        public int Year { get; set; } = DateTime.UtcNow.Year;
+        public int Month { get; set; } = DateTime.UtcNow.Month;
         public bool IsTodayOrLater { get; set; } = false;
         public bool IsToday { get; set; } = false;
         public decimal Total { get; set; } = 0.0m;
