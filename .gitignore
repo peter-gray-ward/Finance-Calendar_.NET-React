@@ -1,0 +1,9 @@
+node_modules
+*.dll
+*.props
+*.cache
+*.pdb
+*.suo
+*.user
+bin
+obj
