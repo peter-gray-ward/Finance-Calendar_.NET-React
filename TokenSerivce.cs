@@ -61,7 +61,7 @@ namespace FinanceCalendar
                 Expenses = jwtToken.Claims.Where(c => c.Type == "Expense").Select(c =>
                 {
                     var parts = c.Value.Split(':');
-                    return new Expense { Name = parts[0], Amount = decimal.Parse(parts[1]) };
+                    return new Expense { Name = parts[0], Amount = double.Parse(parts[1]) };
                 }).ToList()
             };
 

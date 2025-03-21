@@ -49,12 +49,22 @@ export interface Event {
     id: string;
     recurrenceId: string;
     summary: string;
-    date: Date;
-    recurrenceEndDate: Date;
+    date: string;
+    recurrenceEndDate: string;
     amount: number;
     total: number;
     balance: number;
     exclude: boolean;
+    frequency: string;
+    userId: string;
+}
+
+export interface Expense {
+    id: string;
+    name: string;
+    amount: number;
+    startDate: string;
+    recurrenceEndDate: string;
     frequency: string;
     userId: string;
 }

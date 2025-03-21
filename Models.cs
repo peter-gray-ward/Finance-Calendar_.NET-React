@@ -16,7 +16,7 @@ namespace FinanceCalendar
         [Required]
         public string UserName { get; set; } = string.Empty;
         [Required]
-        public decimal CheckingBalance { get; set; } = 0.0m;
+        public double CheckingBalance { get; set; } = 0.0;
         [Required]
         public string Password { get; set; } = string.Empty;
         public string ProfileThumbnailBase64 { get; set; } = string.Empty;
@@ -32,9 +32,9 @@ namespace FinanceCalendar
         public string Summary { get; set; } = string.Empty;
         public DateTime Date { get; set; } = DateTime.UtcNow;
         public DateTime RecurrenceEndDate { get; set; } = DateTime.UtcNow;
-        public decimal Amount { get; set; } = 0.0m;
-        public decimal Total { get; set; } = 0.0m;
-        public decimal Balance { get; set; } = 0.0m;
+        public double Amount { get; set; } = 0.0;
+        public double Total { get; set; } = 0.0;
+        public double Balance { get; set; } = 0.0;
         public bool Exclude { get; set; } = false;
         public string Frequency { get; set; } = string.Empty;
 
@@ -48,7 +48,7 @@ namespace FinanceCalendar
         [Required]
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty;
-        public decimal Amount { get; set; } = 0.0m;
+        public double Amount { get; set; } = 0.0;
         public DateTime StartDate { get; set; } = DateTime.UtcNow;
         public DateTime RecurrenceEndDate { get; set; } = DateTime.UtcNow;
         public string Frequency { get; set; } = string.Empty;
@@ -83,7 +83,7 @@ namespace FinanceCalendar
         public int Month { get; set; } = DateTime.UtcNow.Month;
         public bool IsTodayOrLater { get; set; } = false;
         public bool IsToday { get; set; } = false;
-        public decimal Total { get; set; } = 0.0m;
+        public double Total { get; set; } = 0.0;
     }
 
     public record ApiResponse<T>

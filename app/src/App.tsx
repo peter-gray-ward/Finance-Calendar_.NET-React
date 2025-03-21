@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import './App.scss';
-import { User, DOW, MONTHNAMES, Day, ApiResponse, Event } from './types';
+import { User, DOW, MONTHNAMES, Day, ApiResponse, Event, Expense } from './types';
 import Modal from './Modal';
 import { xhr, capitalizeKeys } from './util';
 import * as signalR from '@microsoft/signalr';
@@ -57,7 +57,13 @@ function App({ user }: { user: User }) {
 
   }, []);
 
-  
+  const updateExpense = useCallback(() => {
+
+  }, []);
+
+  const deleteExpense = useCallback((expense: Expense) => {
+
+  }, []);
 
   const getCalendar = useCallback(() => {
     xhr({
@@ -110,7 +116,31 @@ function App({ user }: { user: User }) {
           <div className="th">End Date</div>
         </div>
         {
+          user.account.expenses.map((expense: Expense) => (
+            <div className="tr data id expenses" id={ expense.id } key={expense.id}>
+              <input name="name" className="td" type="text" value={expense.name} onChange={updateExpense} />
+              
+              <div className="td select-container td">
+                <select name="frequency" 
+                     className="select"
+                     value={expense.frequency} onChange={updateExpense}>
+                  <option value="monthly">monthly</option>
+                  <option value="weekly">weekly</option>
+                  <option value="biweekly">biweekly</option>
+                  <option value="daily">daily</option>
+                </select>
 
+              </div>
+              
+              <input name="amount" className="td" type="number" value={expense.amount} onChange={updateExpense} />
+              
+              <input name="startdate" className="td" type="date" value={expense.startDate.split('T')[0]} onChange={updateExpense} />
+              
+              <input name="recurrenceenddate" className="td" type="date" value={expense.recurrenceEndDate.split('T')[0]} onChange={updateExpense} />
+              
+              <button className="delete-expense" onClick={() => deleteExpense(expense)}>-</button>
+            </div>
+          ))
         }
       </div>
       <div className="tr button-row-right">

@@ -57,11 +57,11 @@ namespace FinanceCalendar
                 if (isToday)
                 {
                     Console.WriteLine("found today");
-                    day.Total = (decimal)user.CheckingBalance;
+                    day.Total = (double)user.CheckingBalance;
                 }
                 else if (0 == day.Events.Count)
                 {
-                    day.Total = 0.0m;
+                    day.Total = 0.0;
                 }
 
                 currentWeek.Add(day);

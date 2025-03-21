@@ -34,3 +34,5 @@ CREATE TABLE IF NOT EXISTS "Expenses" (
     "UserId" UUID,
     FOREIGN KEY ("UserId") REFERENCES "Users" ("Id")
 );
+
+

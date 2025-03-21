@@ -43,6 +43,7 @@ namespace FinanceCalendar
             _context.SaveChanges();
 
             var account = new Account { UserId = user.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
+            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
             var token = _tokenService.GenerateToken(user, account);
 
             Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
@@ -71,6 +72,7 @@ namespace FinanceCalendar
             }
 
             var account = new Account { UserId = existingUser.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
+            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
             var token = _tokenService.GenerateToken(existingUser, account);
             user.Account = account;
 
@@ -115,6 +117,7 @@ namespace FinanceCalendar
             }
 
             var account = _tokenService.DecodeToken(token);
+            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
             user.Account = account;
 
             return Ok(new ApiResponse<User>("User retrieved successfully.", null, user));
