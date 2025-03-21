@@ -72,6 +72,7 @@ namespace FinanceCalendar
 
             var account = new Account { UserId = existingUser.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
             var token = _tokenService.GenerateToken(existingUser, account);
+            user.Account = account;
 
             Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
             {

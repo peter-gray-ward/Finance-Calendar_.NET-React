@@ -45,6 +45,20 @@ export interface Day {
     total: number;
 }
 
+export interface Event {
+    id: string;
+    recurrenceId: string;
+    summary: string;
+    date: Date;
+    recurrenceEndDate: Date;
+    amount: number;
+    total: number;
+    balance: number;
+    exclude: boolean;
+    frequency: string;
+    userId: string;
+}
+
 export interface ApiResponse {
     error?: string;
     message?: string;
