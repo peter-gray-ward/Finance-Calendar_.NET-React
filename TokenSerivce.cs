@@ -5,19 +5,41 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.Collections.Generic;
 using System.Security.Claims;
+using System.Web;
 
 namespace FinanceCalendar
 {
     public class TokenService
     {
         private readonly IConfiguration _configuration;
+        private readonly FinanceCalendarContext _context;
 
-        public TokenService(IConfiguration configuration)
+        public TokenService(IConfiguration configuration, FinanceCalendarContext _context)
         {
             _configuration = configuration;
+            this._context = _context;
         }
 
-        public string GenerateToken(User user, Account account)
+        public User GetUser(HttpRequest Request)
+        {
+            var token = Request.Cookies["finance-calendar-jwt"];
+            if (string.IsNullOrEmpty(token))
+            {
+                Console.WriteLine("couldn't find token");
+                return null;
+            }
+
+            var account = DecodeToken(token);
+            var user = _context.Users.SingleOrDefault(u => u.Id == account.UserId);
+            if (user == null)
+            {
+                return null;
+            }
+            user.Account = account;
+            return user;
+        }
+
+        public string GenerateToken(User user)
         {
             var claims = new List<Claim>
             {
@@ -25,15 +47,10 @@ namespace FinanceCalendar
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("UserName", user.UserName),
                 new Claim("CheckingBalance", user.CheckingBalance.ToString()),
-                new Claim("Month", account.Month.ToString()),
-                new Claim("Year", account.Year.ToString()),
+                new Claim("Month", user.Account.Month.ToString()),
+                new Claim("Year", user.Account.Year.ToString()),
                 new Claim("UserId", user.Id.ToString())
             };
-
-            foreach (var expense in account.Expenses)
-            {
-                claims.Add(new Claim("Expense", $"{expense.Name}:{expense.Amount}"));
-            }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key")));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

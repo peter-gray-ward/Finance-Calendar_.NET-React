@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.IdentityModel.Tokens.Jwt;
+using System.Web;
 
 namespace FinanceCalendar
 {
@@ -14,11 +15,13 @@ namespace FinanceCalendar
         private readonly Regex userIdsPattern = new Regex(@"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$");
         private readonly TokenService _tokenService;
         private readonly FinanceCalendarContext _context;
+        private readonly Calendar calendar;
 
-        public FinanceCalendarController(TokenService tokenService, FinanceCalendarContext context)
+        public FinanceCalendarController(TokenService tokenService, FinanceCalendarContext context, Calendar cal)
         {
             _tokenService = tokenService;
             _context = context;
+            calendar = cal;
         }
 
         [HttpPost]
@@ -27,13 +30,21 @@ namespace FinanceCalendar
         {
             if (user == null || string.IsNullOrEmpty(user.UserName) || string.IsNullOrEmpty(user.Password))
             {
-                return BadRequest(new ApiResponse<User>("Invalid user data.", "Invalid user data.", null));
+                return BadRequest(
+                    new ApiResponse<object>.Builder()
+                        .message("Invalid user data.")
+                        .Build()
+                );
             }
 
             // Check if a user with the same username already exists
             if (_context.Users.Any(u => u.UserName == user.UserName))
             {
-                return Conflict(new ApiResponse<User>("A user with the same username already exists.", "Conflict", null));
+                return Conflict(
+                    new ApiResponse<object>.Builder()
+                        .message("A user with the same username already exists.")
+                        .Build()
+                );
             }
 
             // Hash the password using BCrypt
@@ -44,7 +55,8 @@ namespace FinanceCalendar
 
             var account = new Account { UserId = user.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
             account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
-            var token = _tokenService.GenerateToken(user, account);
+            user.Account = account;
+            var token = _tokenService.GenerateToken(user);
 
             Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
             {
@@ -53,7 +65,12 @@ namespace FinanceCalendar
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new ApiResponse<object>("User registered successfully.", null, new { user, token }));
+            return Ok(
+                new ApiResponse<User>.Builder()
+                    .message("User registered successfully.")
+                    .user(user)
+                    .Build()
+            );
         }
 
         [HttpPost]
@@ -62,117 +79,142 @@ namespace FinanceCalendar
         {
             if (user == null || string.IsNullOrEmpty(user.UserName) || string.IsNullOrEmpty(user.Password))
             {
-                return BadRequest(new ApiResponse<User>("Invalid login data.", "Invalid login data.", null));
+                return BadRequest(
+                    new ApiResponse<object>.Builder()
+                        .message("Invalid login data")
+                        .Build()
+                );
             }
 
             var existingUser = _context.Users.SingleOrDefault(u => u.UserName == user.UserName);
             if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
             {
-                return Unauthorized(new ApiResponse<User>("Invalid username or password.", "Unauthorized", null));
+                return BadRequest(
+                    new ApiResponse<object>.Builder()
+                        .message("Invalid username or password")
+                        .Build()
+                );
             }
 
             var account = new Account { UserId = existingUser.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
-            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
-            var token = _tokenService.GenerateToken(existingUser, account);
-            user.Account = account;
+            account.Expenses = _context.Expenses.Where(e => e.UserId == existingUser.Id).ToList();
+            existingUser.Account = account;
 
+            var token = _tokenService.GenerateToken(existingUser);
+            
             Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = false,
                 SameSite = SameSiteMode.Lax
             });
-            return Ok(new ApiResponse<object>("Login successful.", null, new { user = existingUser, token }));
+            return Ok(
+                new ApiResponse<User>.Builder()
+                    .message("Login successful.")
+                    .user(existingUser)
+                    .Build()
+            );
         }
 
         [Authorize]
         [HttpGet]
         [Route("get-user")]
         public IActionResult GetUser()
-        {
-            foreach (var claim in User.Claims)
-            {
-                Console.WriteLine($"Claim Type: {claim.Type}, Claim Value: {claim.Value}");
-            }   
+        {  
             var userId = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
-            Console.WriteLine($"Extracted userId from claims: {userId}");
 
             if (string.IsNullOrEmpty(userId))
             {
-                Console.WriteLine("User not authenticated.");
-                return Unauthorized(new ApiResponse<User>("User not authenticated.", "Unauthorized", null));
+                return _Logout();
             }
 
             var user = _context.Users.SingleOrDefault(u => u.Id == Guid.Parse(userId));
             if (user == null)
             {
-                Console.WriteLine("User not found.");
-                return NotFound(new ApiResponse<User>("User not found.", "Not Found", null));
+                return _Logout();
             }
 
             var token = Request.Cookies["finance-calendar-jwt"];
             if (string.IsNullOrEmpty(token))
             {
-                return Unauthorized(new ApiResponse<User>("Token not found.", "Unauthorized", null));
+                return _Logout();
             }
 
             var account = _tokenService.DecodeToken(token);
             account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
             user.Account = account;
 
-            return Ok(new ApiResponse<User>("User retrieved successfully.", null, user));
+            return Ok(
+                new ApiResponse<User>.Builder()
+                    .message("User retrieved successfully.")
+                    .user(user)
+                    .Build()
+            );
+        }
+
+        private IActionResult _Logout()
+        {
+            Response.Cookies.Delete("finance-calendar-jwt");
+            return Ok(
+                new ApiResponse<object>.Builder()
+                    .message("Logout successful.")
+                    .Build()
+            );
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("logout")]
+        public IActionResult Logout()
+        {
+            return _Logout();
         }
 
         [Authorize]
         [HttpGet]
         [Route("get-calendar")]
-        public IActionResult GetCalendar(Calendar calendar)
+        public IActionResult GetCalendar()
         {
-            var token = Request.Cookies["finance-calendar-jwt"];
-            if (string.IsNullOrEmpty(token))
-            {
-                return Unauthorized(new ApiResponse<User>("Token not found.", "Unauthorized", null));
-            }
+            User user = _tokenService.GetUser(Request);
+            if (user == null) return _Logout();
 
-            var account = _tokenService.DecodeToken(token);
-            var user = _context.Users.SingleOrDefault(u => u.Id == account.UserId);
-            if (user == null)
-            {
-                return Unauthorized(new ApiResponse<User>("Token not found.", "Unauthorized", null));
-            }
+            Console.WriteLine("GET Calendar");
 
-            DateTime currentMonth = new DateTime(account.Year, account.Month, 1);
-            DateTime previousMonth = currentMonth.AddMonths(-1);
-            DateTime nextMonth = currentMonth.AddMonths(2);
+            List<List<Day>> cal = calendar.GenerateCalendar(user);
 
-            var events = _context.Events
-                .Where(e => e.UserId == user.Id && e.Date >= previousMonth && e.Date < nextMonth)
-                .ToList();
-            
-            var weeks = calendar.GetWeeks(user, account.Month, account.Year, new List<Event>());
-
-            return Ok(new ApiResponse<object>("Calendar retrieved successfully.", null, weeks));
+            return Ok(
+                new ApiResponse<List<List<Day>>>.Builder()
+                    .message("Calendar retrieved successfully.")
+                    .user(user)
+                    .data(cal)
+                    .Build()
+            );
         }
 
         [Authorize]
-        [HttpPost]
-        [Route("update-month")]
-        public IActionResult UpdateMonth([FromBody] int month)
+        [HttpGet]
+        [Route("change-month/{direction}")]
+        public IActionResult UpdateMonth(int direction)
         {
-            var userId = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
-            if (string.IsNullOrEmpty(userId))
+            User user = _tokenService.GetUser(Request);
+            if (user == null) return _Logout();
+            user.Account.Month += direction;
+            if (direction == 0)
             {
-                return Unauthorized(new ApiResponse<User>("User not authenticated.", "Unauthorized", null));
+                user.Account.Month = DateTime.Now.Month;
+                user.Account.Year = DateTime.Now.Year;
             }
-
-            var user = _context.Users.SingleOrDefault(u => u.Id == Guid.Parse(userId));
-            if (user == null)
+            else if (user.Account.Month > 11)
             {
-                return NotFound(new ApiResponse<User>("User not found.", "Not Found", null));
+                user.Account.Month = 0;
+                user.Account.Year += 1;
             }
-
-            var account = new Account { UserId = user.Id, Month = month, Year = DateTime.Now.Year };
-            var token = _tokenService.GenerateToken(user, account);
+            else if (user.Account.Month < 0)
+            {
+                user.Account.Month = 11;
+                user.Account.Year -= 1;
+            }
+            var token = _tokenService.GenerateToken(user);
 
             Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
             {
@@ -181,7 +223,99 @@ namespace FinanceCalendar
                 SameSite = SameSiteMode.Strict
             });
 
-            return Ok(new ApiResponse<object>("Month updated successfully.", null, new { user, token }));
+            List<List<Day>> cal = calendar.GenerateCalendar(user);
+
+            return Ok(
+                new ApiResponse<List<List<Day>>>.Builder()
+                    .message("Month updated successfully.")
+                    .user(user)
+                    .data(cal)
+                    .Build()
+            );
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("add-expense")]
+        public IActionResult AddExpense()
+        {
+            User user = _tokenService.GetUser(Request);
+            if (user == null) return _Logout();
+
+            Expense expense = new() { UserId = user.Id, Id = Guid.NewGuid() };
+            _context.Expenses.Add(expense);
+            _context.SaveChanges();
+
+            return Ok(
+                new ApiResponse<Expense>.Builder()
+                    .message("Expense added successfully.")
+                    .user(user)
+                    .data(expense)
+                    .Build()
+            );
+        }
+
+        [Authorize]
+        [HttpDelete]
+        [Route("delete-expense/{expenseId}")]
+        public IActionResult DeleteExpense(Guid expenseId)
+        {
+            User user = _tokenService.GetUser(Request);
+            if (user == null) return _Logout();
+
+            var expense = _context.Expenses.FirstOrDefault(e => e.Id == expenseId);
+            if (expense == null)
+            {
+                return NotFound(
+                    new ApiResponse<object>.Builder()
+                        .message("Expense not found.")
+                        .Build()
+                );
+            }
+
+            _context.Expenses.Remove(expense);
+            _context.SaveChanges();
+
+            return Ok(
+                new ApiResponse<object>.Builder()
+                    .message("Expense deleted successfully.")
+                    .Build()
+            );
+        }
+
+        [Authorize]
+        [HttpPut]
+        [Route("update-expense")]
+        public IActionResult UpdateExpense([FromBody] Expense expense)
+        {
+            User user = _tokenService.GetUser(Request);
+            if (user == null) return _Logout();
+
+            var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
+            if (existingExpense == null)
+            {
+                _context.Expenses.Add(expense);
+            }
+            else
+            {
+                var properties = typeof(Expense).GetProperties();
+                foreach (var prop in properties)
+                {
+                    if (prop.Name == "Id") continue;
+
+                    var newValue = prop.GetValue(expense);
+                    prop.SetValue(existingExpense, newValue);
+                }
+            }
+
+            _context.SaveChanges();
+
+            return Ok(
+                new ApiResponse<Expense>.Builder()
+                    .message("Expense successfully updated")
+                    .data(expense)
+                    .Build()
+            );
         }
     }
 }

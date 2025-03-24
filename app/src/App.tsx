@@ -5,8 +5,11 @@ import Modal from './Modal';
 import { xhr, capitalizeKeys } from './util';
 import * as signalR from '@microsoft/signalr';
 import { error } from 'console';
+import Expenses from './Expenses';
+import Debts from './Debts';
 
-function App({ user }: { user: User }) {
+function App({ _user }: { _user: User }) {
+  const [user, setUser] = useState(_user);
   const [viewModal, setViewModal] = useState({
     event: false
   });
@@ -42,28 +45,18 @@ function App({ user }: { user: User }) {
   }, []);
 
   const logout = useCallback(() => {
-
-  }, []);
-
-  const addExpense = useCallback(() => {
-
-  }, []);
-
-  const refreshCalendar = useCallback(() => {
-
+    xhr({
+      method: 'GET',
+      url: '/logout'
+    }).then((res: ApiResponse) => {
+      window.location.reload();
+    });
   }, []);
 
   const updateCheckingBalance = useCallback(() => {
 
   }, []);
 
-  const updateExpense = useCallback(() => {
-
-  }, []);
-
-  const deleteExpense = useCallback((expense: Expense) => {
-
-  }, []);
 
   const getCalendar = useCallback(() => {
     xhr({
@@ -91,79 +84,29 @@ function App({ user }: { user: User }) {
 
   }, []);
 
-  const changeMonth = useCallback((which: number) => {
-
+  const changeMonth = useCallback((direction: number) => {
+    xhr({
+      method: 'GET',
+      url: '/change-month/' + direction
+    }).then((res: ApiResponse) => {
+      setUser({
+        ...user,
+        account: {
+          ...user.account,
+          month: res.user!.account.month,
+          year: res.user!.account.year
+        }
+      });
+      setCalendar(res.data);
+    });
   }, []);
-
-  if (!user || !user.account) {
-    debugger
-  }
-
 
   return <>
     <button id="expand-to-budget" onClick={expandToBudget}>☰</button>
     <header id="left">
       <button onClick={logout}>logout</button>
-      <h2>
-        <div>Regular Expenses</div>
-      </h2>
-      <div className="table" id="expenses">
-        <div className="tr">
-          <div className="th">Expense</div>
-          <div className="th">Frequency</div>
-          <div className="th">Amount</div>
-          <div className="th">Start Date</div>
-          <div className="th">End Date</div>
-        </div>
-        {
-          user.account.expenses.map((expense: Expense) => (
-            <div className="tr data id expenses" id={ expense.id } key={expense.id}>
-              <input name="name" className="td" type="text" value={expense.name} onChange={updateExpense} />
-              
-              <div className="td select-container td">
-                <select name="frequency" 
-                     className="select"
-                     value={expense.frequency} onChange={updateExpense}>
-                  <option value="monthly">monthly</option>
-                  <option value="weekly">weekly</option>
-                  <option value="biweekly">biweekly</option>
-                  <option value="daily">daily</option>
-                </select>
-
-              </div>
-              
-              <input name="amount" className="td" type="number" value={expense.amount} onChange={updateExpense} />
-              
-              <input name="startdate" className="td" type="date" value={expense.startDate.split('T')[0]} onChange={updateExpense} />
-              
-              <input name="recurrenceenddate" className="td" type="date" value={expense.recurrenceEndDate.split('T')[0]} onChange={updateExpense} />
-              
-              <button className="delete-expense" onClick={() => deleteExpense(expense)}>-</button>
-            </div>
-          ))
-        }
-      </div>
-      <div className="tr button-row-right">
-        <button className="add-expense" onClick={addExpense}>+</button>
-        <button id="refresh-calendar" onClick={refreshCalendar}>↺</button>
-      </div>
-      <h2>
-        <div>Debts</div>
-      </h2>
-      <div className="table" id="debts">
-        <div className="tr">
-          <div className="th">Creditor</div>
-          <div className="th">Account Number</div>
-          <div className="th">Balance</div>
-          <div className="th">Interest</div>
-          <div className="th">Payoff Date</div>
-          <div className="th">Event</div>
-        </div>
-      
-      </div>
-      <div className="tr button-row-right">
-        <button id="add-debt">+</button>
-      </div>
+      <Expenses user={user} setUser={setUser} />
+      <Debts user={user} />
     </header>
     <main id="main" onClick={clickMain}>
       <div id="calendar-month-header">

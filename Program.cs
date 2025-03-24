@@ -65,7 +65,6 @@ builder.Services.AddAuthentication(options =>
             if (string.IsNullOrEmpty(context.Token))
             {
                 var jwtCookie = context.Request.Cookies["finance-calendar-jwt"];
-                Console.WriteLine($"\nToken from cookie: {jwtCookie}\n"); // Add this line for debugging
                 if (!string.IsNullOrEmpty(jwtCookie))
                 {
                     context.Token = jwtCookie;
@@ -80,7 +79,6 @@ builder.Services.AddAuthentication(options =>
         },
         OnTokenValidated = context =>
         {
-            Console.WriteLine("Token validated successfully");
             return Task.CompletedTask;
         }
     };

@@ -17,7 +17,7 @@ export const xhr = async (options: RequestOptions): Promise<any> => {
     if (response.status == 401) {
         return {
             error: "Unauthorized"
-        };
+        } as ApiResponse
     }
 
     return await response.json() as ApiResponse;
@@ -34,4 +34,24 @@ export const capitalizeKeys = (obj: any): any => {
         }, {} as { [key: string]: any });
     }
     return obj;
+};
+
+export const serializeRow = <T>(tr: HTMLElement, cls: new () => T, additionalProperties: T): T => {
+    const instance = new cls();
+    const keys = Object.keys(instance as {}) as (keyof T)[];
+    const additionalPropertyKeys = Object.keys(additionalProperties as {}) as (keyof T)[];
+    const result = {} as T;
+
+    for (const key of keys) {
+        const input = tr.querySelector<HTMLInputElement>(`[name="${new String(key)}"]`);
+        if (input) {
+            result[key] = input.value as any;
+        }
+    }
+
+    for (let prop of additionalPropertyKeys) {
+        result[prop] = additionalProperties[prop];
+    }
+
+    return result;
 };

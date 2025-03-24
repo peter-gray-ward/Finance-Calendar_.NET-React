@@ -22,6 +22,7 @@ export interface ApiResponse {
     error?: string;
     message?: string;
     data?: any;
+    user?: User;
 }
 
 export interface UserLoginResponse {
@@ -59,7 +60,7 @@ export interface Event {
     userId: string;
 }
 
-export interface Expense {
+export interface IExpense {
     id: string;
     name: string;
     amount: number;
@@ -67,6 +68,16 @@ export interface Expense {
     recurrenceEndDate: string;
     frequency: string;
     userId: string;
+}
+
+export class Expense {
+    id: string = '';
+    name: string = '';
+    amount: string = '';
+    startDate: string = new Date().toISOString().split('T')[0];
+    recurrenceEndDate: string = new Date().toISOString().split('T')[0];
+    frequency: string = 'monthly';
+    userId: string = '';
 }
 
 export interface ApiResponse {

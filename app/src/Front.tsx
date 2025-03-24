@@ -18,17 +18,19 @@ export default function Front() {
             console.log("----", res);
             setLoading(false);
             if (!res.error) {
-                setUser(res.data);
+                setUser(res.user);
                 setAuthenticated(true);
             }
         });
-    }, [])
+    }, []);
+
+    
 
     return (
         loading ? <div id="Front">
             <h1>FINANCE<br/>CALENDAR</h1>
         </div> : (
-            user ? <App user={user!} /> : <Login setUser={setUser} />
+            user ? <App _user={user!} /> : <Login setUser={setUser} />
         )
     );
 }

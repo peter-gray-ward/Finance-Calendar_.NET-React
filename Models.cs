@@ -88,15 +88,49 @@ namespace FinanceCalendar
 
     public record ApiResponse<T>
     {
-        public string Message { get; init; }
-        public string Error { get; init; }
-        public T Data { get; init; }
+        public string? Message { get; init; }
+        public string? Error { get; init; }
+        public T? Data { get; init; }
+        public User? User { get; init; }
 
-        public ApiResponse(string message, string error, T data)
+        public ApiResponse(string? message, string? error, T? data, User? user)
         {
             Message = message;
             Error = error;
-            Data = data;    
+            Data = data;
+            User = user;
+        }
+
+        public class Builder
+        {
+            private string? _message;
+            private string? _error;
+            private T? _data;
+            private User? _user;
+            public Builder message(string message)
+            {
+                this._message = message;
+                return this;
+            }
+            public Builder error(string error)
+            {
+                this._error = error;
+                return this;
+            }
+            public Builder data(T data)
+            {
+                this._data = data;
+                return this;
+            }
+            public Builder user(User user)
+            {
+                this._user = user;
+                return this;
+            }
+            public ApiResponse<T> Build()
+            {
+                return new ApiResponse<T>(_message, _error, _data, _user);
+            }
         }
     }
 }

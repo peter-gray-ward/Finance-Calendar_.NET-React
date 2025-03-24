@@ -6,25 +6,35 @@ namespace FinanceCalendar
 {
     public class Calendar
     {
-        public List<List<Day>> GetWeeks(User user, int month, int year, List<Event> events)
+        private readonly FinanceCalendarContext _context;
+
+        public Calendar(FinanceCalendarContext context)
         {
-            Console.WriteLine($"\t\t{year}: {month}");
+            _context = context;
+        }
+
+        public List<List<Day>> GenerateCalendar(User user)
+        {
+            DateTime currentMonth = new DateTime(user.Account.Year, user.Account.Month, 1);
+            DateTime previousMonth = currentMonth.AddMonths(-1);
+            DateTime nextMonth = currentMonth.AddMonths(2);
+
+            List<Event> events = _context.Events
+                .Where(e => e.UserId == user.Id && e.Date >= previousMonth && e.Date < nextMonth)
+                .ToList();
 
             List<List<Day>> weeks = new List<List<Day>>();
             string[] DOW = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
 
-            // Set the date to the first day of the current month
-            DateTime cal = new DateTime(year, month, 1);
+            DateTime cal = new DateTime(user.Account.Year, user.Account.Month, 1);
 
-            // Adjust date to the nearest previous Sunday
             cal = cal.AddDays(-(int)cal.DayOfWeek);
 
-            // Get today's date for comparison
             DateTime today = DateTime.Today;
 
             List<Day> currentWeek = new List<Day>();
 
-            while (weeks.Count < 6 || cal.Month == month)
+            while (weeks.Count < 6 || cal.Month == user.Account.Month)
             {
                 int dayOfMonth = cal.Day;
                 int dayOfWeekIndex = (int)cal.DayOfWeek; // Sunday = 0, Monday = 1, etc.
@@ -56,7 +66,6 @@ namespace FinanceCalendar
 
                 if (isToday)
                 {
-                    Console.WriteLine("found today");
                     day.Total = (double)user.CheckingBalance;
                 }
                 else if (0 == day.Events.Count)
@@ -66,14 +75,12 @@ namespace FinanceCalendar
 
                 currentWeek.Add(day);
 
-                // If the week has 7 days, add it to the list of weeks
                 if (currentWeek.Count == 7)
                 {
                     weeks.Add(currentWeek);
                     currentWeek = new List<Day>();
                 }
 
-                // Move to the next day
                 cal = cal.AddDays(1);
             }
 

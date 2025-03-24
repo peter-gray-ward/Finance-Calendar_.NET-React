@@ -26,7 +26,7 @@ function Login({ setUser }: { setUser: React.Dispatch<React.SetStateAction<User|
         }).then((res: ApiResponse) => {
           if (!res.error) {
             console.log(tab + " successful", res);
-            setUser(res.data as User);
+            setUser(res.user as User);
           } else {
             console.error(tab + " failed", res);
             setError(res.error);
