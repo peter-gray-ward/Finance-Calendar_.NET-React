@@ -5,6 +5,7 @@ import './App.scss';
 
 function Login({ setUser }: { setUser: React.Dispatch<React.SetStateAction<User|null>> }) {
   const [tab, setTab] = useState('login');
+  const [message, setMessage] = useState<string|null>(null);
   const [error, setError] = useState<string|null>(null);
   const usernameRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
@@ -26,7 +27,12 @@ function Login({ setUser }: { setUser: React.Dispatch<React.SetStateAction<User|
         }).then((res: ApiResponse) => {
           if (!res.error) {
             console.log(tab + " successful", res);
-            setUser(res.user as User);
+            if (tab == 'login') {
+              setUser(res.user as User);
+            } else if (res.message) {
+              setError(null);
+              setMessage(res.message);
+            }
           } else {
             console.error(tab + " failed", res);
             setError(res.error);
@@ -57,6 +63,7 @@ function Login({ setUser }: { setUser: React.Dispatch<React.SetStateAction<User|
           }
         </div>
         <p className="error">{ error || null }</p>
+        <p className="message">{ message || null }</p>
       </div>
     </div>
   );

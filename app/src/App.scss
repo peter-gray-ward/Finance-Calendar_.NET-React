@@ -68,17 +68,21 @@ body {
   height: 100vh;
   width: 100vw;
 
-  p.error {
+  p {
     text-align: center;
-    color: red;
+    &.error {
+      color: red;
+    }
+    &.message {
+      color: green;
+    }
   }
 
   h1 {
     color: skyblue;
-    font-size: 4rem;
-    font-weight: 100;
+    font-size: 2.5rem;
+    font-weight: 700;
     font-family: system-ui;
-    text-shadow: -1px 0 royalblue;
   }
 
   .Tabs {

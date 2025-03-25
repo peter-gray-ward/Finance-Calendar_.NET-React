@@ -81,7 +81,7 @@ namespace FinanceCalendar
             {
                 return BadRequest(
                     new ApiResponse<object>.Builder()
-                        .message("Invalid login data")
+                        .error("Invalid login data")
                         .Build()
                 );
             }
@@ -91,7 +91,7 @@ namespace FinanceCalendar
             {
                 return BadRequest(
                     new ApiResponse<object>.Builder()
-                        .message("Invalid username or password")
+                        .error("Invalid username or password")
                         .Build()
                 );
             }

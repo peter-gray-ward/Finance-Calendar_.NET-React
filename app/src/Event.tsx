@@ -1,15 +1,21 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { useLocation, useParams } from 'react-router-dom';
 import { IEvent, Position, User } from './types';
 
-export default function Event({ 
-	user, 
-	event,
-	origin 
-}: { 
-	user: User, 
-	event: IEvent,
-	origin: Position
-}) {
+export default function Event({ origin, setEvent }: { origin: Position, setEvent: React.Dispatch<React.SetStateAction<IEvent|null>> }) {
+  const { id } = useParams();
+  const location = useLocation();
+  const { event, origin: initialOrigin, user } = location.state || {};
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => {
+      const calendarEvent = document.getElementById(`event-${event.id}`);
+      if (calendarEvent) {
+        setEvent(event);
+      }
+    });
+    // Clean up on unmount
+    return () => cancelAnimationFrame(frame);
+  }, []);
   const eventRef = useRef<HTMLDivElement|null>(null);
   const saveThisEvent = useCallback(() => {
 
