@@ -5,7 +5,7 @@ html {
   --modal-width: 400px;
   --modal-height: 200px;
   --modal-label-font-size: 1.15rem;
-  --modal-font-size: 1.5rem;
+  --modal-font-size: 1rem;
   --panel-transition-speed: 0.05s;
   --background: #171a17;
   --color: whitesmoke;
@@ -18,6 +18,10 @@ html {
     100% {
         transform: rotate(-360deg);
     }
+}
+
+.hidden {
+  display: none !important;
 }
 
 body {
@@ -72,6 +76,9 @@ body {
   h1 {
     color: skyblue;
     font-size: 4rem;
+    font-weight: 100;
+    font-family: system-ui;
+    text-shadow: -1px 0 royalblue;
   }
 
   .Tabs {
@@ -202,10 +209,6 @@ body {
     .th:nth-of-type(5),
     .td:nth-of-type(5) {
       width: 15%;
-    }
-
-    .hidden {
-      display: none !important;
     }
 
     &.button-row-right {
@@ -375,8 +378,44 @@ main#main {
           }
         }
       }
+      .events {
+        display: flex;
+        flex-direction: column;
+        height: 75%;
+        padding: 0.5rem 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        .event {
+          height: 1rem;
+          width: calc(100% - 0.75rem);
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin: 0.5px 0.25rem;
+          padding: 0.1rem;
+          font-size: 0.75rem;
+          border-radius: 5px;
+          .summary {
+            flex-grow: 1;
+            text-indent: 0.25rem;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: pre;
+            user-select: none;
+            cursor: zoom-in;
+          }
+        }
+      }
     }
   }
+}
+
+.positive {
+  color: green;
+}
+
+.negative {
+  color: red;
 }
 
 select {
@@ -407,5 +446,135 @@ select {
   &:hover {
     cursor: pointer;
     background: #EBEDEF;
+  }
+}
+
+.modal {
+  position: absolute;
+  width: var(--modal-width);
+  height: var(--modal-height);
+  box-shadow: 0 0 3px 0;
+  border-radius: 5px;
+  background: white;
+  z-index: 2;
+
+  label {
+    color: gray;
+    font-size: var(--modal-label-font-size);
+  }
+
+  .modal-content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: row;
+    font-size: 0.75rem;
+    overflow: auto;
+    background: white;
+    background-size: cover;
+    border-radius: 5px;
+    align-items: center;
+    color: black;
+    box-sizing: content-box;
+    justify-content: space-between;
+
+    label {
+      font-weight: 200;
+      font-size: var(--modal-label-font-size);
+      font-family: system-ui;
+    }
+
+    #modal-event {
+      flex-grow: 1;
+      overflow: auto;
+      display: flex;
+      padding: 0;
+      margin: 0;
+      background: whitesmoke;
+      background-size: contain;
+      height: 100%;
+
+      input {
+        background: transparent;
+        border-width: 1px;
+        width: 100%;
+        box-sizing: border-box;
+        border: none;
+        font-size: var(--modal-font-size);
+        border-bottom: 1px dotted gray;
+      }
+
+      > div {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        align-items: start;
+        justify-content: center;
+        padding-top: 0.5vw;
+        padding-left: 0.5vw;
+        padding-right: 0.5vw;
+        box-sizing: border-box;
+
+        #summary-div {
+          background: whitesmoke;
+          width: 100%;
+          align-self: start;
+        }
+
+        #amount-div {
+          align-self: start;
+          background: whitesmoke;
+          display: flex;
+          box-sizing: content-box;
+          flex-direction: column;
+          align-items: start;
+          padding: 0;
+          display: flex;
+          width: 100%;
+        }
+      }
+
+      #time-container {
+        display: flex;
+        flex-direction: column;
+
+        #frequency-container {
+          width: 100%;
+          padding-right: 0.15rem;
+        }
+      }
+
+    }
+    .button-footer {
+      display: flex;
+      flex-direction: column;
+      box-sizing: content-box;
+      button {
+        background: whitesmoke;
+        border: none;
+        outline: none;
+        flex-grow: 1;
+        font-size: .88rem;
+        color: darkblue;
+        font-family: Charter;
+        text-align: justify;
+        margin-left: 0.2rem;
+        &:first-of-type {
+          border-top-right-radius: 5px;
+        }
+
+        &:last-of-type {
+          border-bottom-right-radius: 5px;
+        }
+
+        &:hover {
+          cursor: pointer;
+          background: transparent;
+          color: black;
+        }
+      }
+    }
   }
 }

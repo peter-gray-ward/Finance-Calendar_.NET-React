@@ -38,7 +38,7 @@ export interface ModalItem {
 export interface Day {
     date: number;
     name: string;
-    events: Event[];
+    events: IEvent[];
     year: number;
     month: number;
     isTodayOrLater: boolean;
@@ -46,7 +46,7 @@ export interface Day {
     total: number;
 }
 
-export interface Event {
+export interface IEvent {
     id: string;
     recurrenceId: string;
     summary: string;
@@ -58,6 +58,11 @@ export interface Event {
     exclude: boolean;
     frequency: string;
     userId: string;
+}
+
+export interface Position {
+    left: number;
+    top: number;
 }
 
 export interface IExpense {

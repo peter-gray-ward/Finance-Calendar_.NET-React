@@ -202,14 +202,14 @@ namespace FinanceCalendar
                 user.Account.Month = DateTime.Now.Month;
                 user.Account.Year = DateTime.Now.Year;
             }
-            else if (user.Account.Month > 11)
+            else if (user.Account.Month > 12)
             {
-                user.Account.Month = 0;
+                user.Account.Month = 1;
                 user.Account.Year += 1;
             }
-            else if (user.Account.Month < 0)
+            else if (user.Account.Month < 1)
             {
-                user.Account.Month = 11;
+                user.Account.Month = 12;
                 user.Account.Year -= 1;
             }
             var token = _tokenService.GenerateToken(user);

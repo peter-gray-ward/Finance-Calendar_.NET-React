@@ -1,32 +1,30 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import './App.scss';
-import { User, DOW, MONTHNAMES, Day, ApiResponse, Event, Expense } from './types';
+import { User, DOW, MONTHNAMES, Day, ApiResponse, IEvent, Expense, Position } from './types';
 import Modal from './Modal';
 import { xhr, capitalizeKeys } from './util';
 import * as signalR from '@microsoft/signalr';
 import { error } from 'console';
 import Expenses from './Expenses';
 import Debts from './Debts';
+import Event from './Event';
 
 function App({ _user }: { _user: User }) {
   const [user, setUser] = useState(_user);
   const [viewModal, setViewModal] = useState({
     event: false
   });
-  const [pagePositions, setPagePositions] = useState({
-    eventOrigin: { top: 0, left: 0 }
-  });
+  const [eventOrigin, setEventOrigion] = useState<Position>({ top: 0, left: 0 } as Position);
+  const [event, setEvent] = useState<IEvent | null>(null);
   const [calendar, setCalendar] = useState<Day[][]>([]);
   const [expanding, setExpanding] = useState<boolean>(false);
   const eventOriginRef = useRef<HTMLElement | null>(null);
   const checkingBalanceRef = useRef<HTMLInputElement | null>(null);
 
   const handleResize = () => {
-    setPagePositions({
-      eventOrigin: {
-        top: eventOriginRef.current ? eventOriginRef.current.getBoundingClientRect().top : 0,
-        left: eventOriginRef.current ? eventOriginRef.current.getBoundingClientRect().left : 0
-      }
+    setEventOrigion({
+      top: eventOriginRef.current ? eventOriginRef.current.getBoundingClientRect().top : 0,
+      left: eventOriginRef.current ? eventOriginRef.current.getBoundingClientRect().left : 0
     });
   };
 
@@ -120,6 +118,10 @@ function App({ _user }: { _user: User }) {
     });
   }, []);
 
+  const selectEvent = useCallback((event: IEvent) => {
+    setEvent(event);
+  }, []);
+
   return <>
     <button id="expand-to-budget" onClick={expandToBudget}>☰</button>
     <header id="left">
@@ -130,7 +132,7 @@ function App({ _user }: { _user: User }) {
     <main id="main" onClick={clickMain}>
       <div id="calendar-month-header">
         <div>
-          <h1 id="month-name">{MONTHNAMES[user.account.month]}</h1>
+          <h1 id="month-name">{MONTHNAMES[user.account.month - 1]}</h1>
           &nbsp;
           <h1 id="year-name">{user.account.year}</h1>
         </div>
@@ -167,28 +169,33 @@ function App({ _user }: { _user: User }) {
                 week.map((day: Day, b: number) => (
                   <div className="day-block" key={`${a}.${b}`}>
                     <div className="day-header">
-                      <div className="total">
-                         {
-                          day.isToday ? <input type="number"
-                            value={ user.checkingBalance }
-                            onChange={updateCheckingBalance}
-                            ref={checkingBalanceRef}
-                            id="checking-balance"/> : (
-                              day.events.length ? day.total : null
-                            )
-                          }
-                        </div>
+                      {
+                        day.isTodayOrLater ?
+                          <div className="total">
+                             {
+                              day.isToday ? <input type="number"
+                                value={ user.checkingBalance }
+                                onChange={updateCheckingBalance}
+                                ref={checkingBalanceRef}
+                                id="checking-balance"/> : (
+                                  day.events.length ? day.total : null
+                                )
+                              }
+                          </div>
+                        : null
+                      }
                       <div className={`day-date${day.isToday ? ' today' : ''}`}>
                         { day.date }
-                      </div>
+                      </div> 
                     </div>
                     <div className="events">
                       {
-                        day.events.map((event: Event, c: number) => (
-                          <div className="event" id={`event-${ event.id }`} key={`${a}.${b}.${c}`}>
-                            <span>•</span> 
+                        day.events.map((event: IEvent, c: number) => (
+                          <div className="event" id={`event-${ event.id }`} key={`${a}.${b}.${c}`}
+                              onClick={() => selectEvent(event)}>
+                            <span className={`${event.amount >= 0 ? 'positive' : 'negative'}`}>•</span> 
                             <span className="summary">{ event.summary.replace('&nbsp;', '').replace('   ', '') }</span> 
-                            <span>
+                            <span className={`${event.amount >= 0 ? 'positive' : 'negative'}`}>
                               { event.amount }
                             </span>
                           </div>
@@ -202,6 +209,9 @@ function App({ _user }: { _user: User }) {
           ))
         }
       </div>
+      {
+        event ? <Event user={user} event={event} origin={eventOrigin} /> : null
+      }
     </main>
   </>
 }
