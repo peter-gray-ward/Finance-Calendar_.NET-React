@@ -1,9 +1,14 @@
 import React, { useCallback, useState, ChangeEvent, useRef } from 'react';
-import { User, IExpense, Expense, ApiResponse } from './types';
+import { User, IExpense, Expense, ApiResponse, Day } from './types';
 import { xhr, serializeRow } from './util';
 
-export default function Expenses({ user, setUser }: { user: User, setUser: React.Dispatch<React.SetStateAction<User>> }) {
+export default function Expenses({ user, setUser, setCalendar }: { 
+  user: User, 
+  setUser: React.Dispatch<React.SetStateAction<User>>,
+  setCalendar: React.Dispatch<React.SetStateAction<Day[][]>>
+}) {
   const [successfulUpdates, setSuccessfulUpdates] = useState<string[]>([]);
+  const [refreshingCalendar, setRefreshingCalendar] = useState<boolean>(false);
 
   const addExpense = useCallback(() => {
     xhr({
@@ -26,12 +31,15 @@ export default function Expenses({ user, setUser }: { user: User, setUser: React
   }, [user]);
 
   const refreshCalendar = useCallback(() => {
+    setRefreshingCalendar(true);
     xhr({
       method: 'POST',
       url: '/refresh-calendar'
     }).then((res: ApiResponse) => {
       if (!res.error) {
-
+        console.log('-- refreshCalendar', res);
+        setCalendar(res.data as Day[][]);
+        setRefreshingCalendar(false);
       }
     });
   }, [user]);
@@ -137,7 +145,7 @@ export default function Expenses({ user, setUser }: { user: User, setUser: React
       </div>
       <div className="tr button-row-right">
         <button className="add-expense" onClick={addExpense}>+</button>
-        <button id="refresh-calendar" onClick={refreshCalendar}>↺</button>
+        <button id="refresh-calendar" className={refreshingCalendar ? 'refreshing' : ''} onClick={refreshCalendar}>↺</button>
       </div>
   </article>
 }

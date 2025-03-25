@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS "Events" (
     "Id" UUID PRIMARY KEY,
     "RecurrenceId" UUID,
     "Summary" VARCHAR(255),
-    "Date" TIMESTAMP NOT NULL,
-    "RecurrenceEndDate" TIMESTAMP,
+    "Date" TIMESTAMPTZ NOT NULL,
+    "RecurrenceEndDate" TIMESTAMPTZ,
     "Amount" DOUBLE PRECISION,
     "Total" DOUBLE PRECISION,
     "Balance" DOUBLE PRECISION,
@@ -28,11 +28,9 @@ CREATE TABLE IF NOT EXISTS "Expenses" (
     "Id" UUID PRIMARY KEY,
     "Name" VARCHAR(255),
     "Amount" DOUBLE PRECISION,
-    "StartDate" TIMESTAMP NOT NULL,
-    "RecurrenceEndDate" TIMESTAMP,
+    "StartDate" TIMESTAMPTZ NOT NULL,
+    "RecurrenceEndDate" TIMESTAMPTZ,
     "Frequency" VARCHAR(255),
     "UserId" UUID,
     FOREIGN KEY ("UserId") REFERENCES "Users" ("Id")
 );
-
-

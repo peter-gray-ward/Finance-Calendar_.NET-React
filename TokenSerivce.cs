@@ -20,21 +20,21 @@ namespace FinanceCalendar
             this._context = _context;
         }
 
-        public User GetUser(HttpRequest Request)
+        public User GetUser(HttpRequest request)
         {
-            var token = Request.Cookies["finance-calendar-jwt"];
+            var token = request.Cookies["finance-calendar-jwt"];
             if (string.IsNullOrEmpty(token))
             {
-                Console.WriteLine("couldn't find token");
-                return null;
+                throw new UnauthorizedAccessException("Token is missing or invalid.");
             }
 
             var account = DecodeToken(token);
             var user = _context.Users.SingleOrDefault(u => u.Id == account.UserId);
             if (user == null)
             {
-                return null;
+                throw new UnauthorizedAccessException("User not found.");
             }
+
             user.Account = account;
             return user;
         }

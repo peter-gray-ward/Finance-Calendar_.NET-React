@@ -11,6 +11,15 @@ html {
   --color: whitesmoke;
 }
 
+@keyframes rotate {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(-360deg);
+    }
+}
+
 body {
   width: 100vw;
   height: 100vh;
@@ -210,11 +219,13 @@ body {
         font-weight: 100;
         font-family: system-ui;
         color: whitesmoke;
+
+        &.refreshing {
+          animation: rotate 1s linear infinite;
+        }
       }
     }
   }
-  
- 
 }
 
 #expand-to-budget {

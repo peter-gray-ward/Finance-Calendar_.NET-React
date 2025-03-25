@@ -176,7 +176,6 @@ namespace FinanceCalendar
         public IActionResult GetCalendar()
         {
             User user = _tokenService.GetUser(Request);
-            if (user == null) return _Logout();
 
             Console.WriteLine("GET Calendar");
 
@@ -197,7 +196,6 @@ namespace FinanceCalendar
         public IActionResult UpdateMonth(int direction)
         {
             User user = _tokenService.GetUser(Request);
-            if (user == null) return _Logout();
             user.Account.Month += direction;
             if (direction == 0)
             {
@@ -240,7 +238,6 @@ namespace FinanceCalendar
         public IActionResult AddExpense()
         {
             User user = _tokenService.GetUser(Request);
-            if (user == null) return _Logout();
 
             Expense expense = new() { UserId = user.Id, Id = Guid.NewGuid() };
             _context.Expenses.Add(expense);
@@ -261,7 +258,6 @@ namespace FinanceCalendar
         public IActionResult DeleteExpense(Guid expenseId)
         {
             User user = _tokenService.GetUser(Request);
-            if (user == null) return _Logout();
 
             var expense = _context.Expenses.FirstOrDefault(e => e.Id == expenseId);
             if (expense == null)
@@ -289,7 +285,6 @@ namespace FinanceCalendar
         public IActionResult UpdateExpense([FromBody] Expense expense)
         {
             User user = _tokenService.GetUser(Request);
-            if (user == null) return _Logout();
 
             var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
             if (existingExpense == null)
@@ -314,6 +309,49 @@ namespace FinanceCalendar
                 new ApiResponse<Expense>.Builder()
                     .message("Expense successfully updated")
                     .data(expense)
+                    .Build()
+            );
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("refresh-calendar")]
+        public IActionResult RefreshCalendar()
+        {
+            User user = _tokenService.GetUser(Request);
+            user.Account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
+            List<List<Day>> cal = calendar.GenerateEventsFromExpenses(user);
+            return Ok(
+                new ApiResponse<List<List<Day>>>.Builder()
+                    .message("Calendar refreshed successfully.")
+                    .user(user)
+                    .data(cal)
+                    .Build()
+            );
+        }
+
+        [Authorize]
+        [HttpPost]
+        [Route("update-checking-balance")]
+        public IActionResult UpdateCheckingBalance([FromBody] double checkingBalance)
+        {
+            User _user = _tokenService.GetUser(Request);
+            var user = _context.Users.Where(u => u.Id == _user.Id).FirstOrDefault();
+            if (user == null)
+            {
+                return _Logout();
+            }
+            user.CheckingBalance = checkingBalance;
+            _context.SaveChanges();
+
+            calendar.CalculateEventTotals(user);
+            List<List<Day>> cal = calendar.GenerateCalendar(user);
+
+            return Ok(
+                new ApiResponse<List<List<Day>>>.Builder()
+                    .message("Checking Balance updated successfully.")
+                    .user(user)
+                    .data(cal)
                     .Build()
             );
         }

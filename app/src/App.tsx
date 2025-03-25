@@ -53,8 +53,24 @@ function App({ _user }: { _user: User }) {
     });
   }, []);
 
+  const updateCheckingBalanceDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const updateCheckingBalance = useCallback(() => {
-
+    const checkingBalance = checkingBalanceRef.current!.value;
+    setUser({
+      ...user,
+      checkingBalance
+    });
+    updateCheckingBalanceDebounceRef.current = setTimeout(() => {
+      xhr({
+        method: 'POST',
+        url: '/update-checking-balance',
+        body: checkingBalance
+      }).then((res: ApiResponse) => {
+        if (!res.error) {
+          setCalendar(res.data);
+        }
+      });
+    }, 888);
   }, []);
 
 
@@ -105,7 +121,7 @@ function App({ _user }: { _user: User }) {
     <button id="expand-to-budget" onClick={expandToBudget}>☰</button>
     <header id="left">
       <button onClick={logout}>logout</button>
-      <Expenses user={user} setUser={setUser} />
+      <Expenses user={user} setUser={setUser} setCalendar={setCalendar} />
       <Debts user={user} />
     </header>
     <main id="main" onClick={clickMain}>
