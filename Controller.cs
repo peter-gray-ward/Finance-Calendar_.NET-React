@@ -344,6 +344,8 @@ namespace FinanceCalendar
             user.CheckingBalance = checkingBalance;
             _context.SaveChanges();
 
+            Console.WriteLine($"update-checking-balance (new - {checkingBalance}) {user.CheckingBalance}");
+
             calendar.CalculateEventTotals(user);
             List<List<Day>> cal = calendar.GenerateCalendar(user);
 

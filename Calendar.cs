@@ -31,7 +31,13 @@ namespace FinanceCalendar
 
             startDate = startDate.AddDays(-(int)startDate.DayOfWeek);
 
-            DateTime today = DateTime.UtcNow.Date;
+            var timeZoneId = user.TimeZone ?? "UTC";
+
+            Console.WriteLine($"Generating a calendar in {timeZoneId}");
+
+            TimeZoneInfo userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            DateTime userNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, userTimeZone);
+            DateTime today = userNow.Date;
 
             List<Day> currentWeek = new List<Day>();
 
@@ -59,7 +65,7 @@ namespace FinanceCalendar
                     if (startDate.Date == ev.Date.Date)
                     {
                         dayEvents.Add(ev);
-                        day.Total = ev.Amount;
+                        day.Total = ev.Total;
                     }
                 }
                 day.Events = dayEvents;
@@ -92,27 +98,25 @@ namespace FinanceCalendar
 
             foreach (var e in events)
             {
-                if (e.Date < DateTime.UtcNow)
+                if (e.Date < DateTime.UtcNow.Date)
                 {
                     e.Total = 0.0;
                 }
             }
 
-            events = events.Where(e => e.Date >= DateTime.UtcNow).ToList();
+            events = events.Where(e => e.Date >= DateTime.UtcNow.Date).ToList();
 
             double runningTotal = user.CheckingBalance;
+            Console.WriteLine($"CalculateEventTotals {runningTotal}");
             if (events.Count > 0)
             {
-                runningTotal += events[0].Amount;
-                events[0].Total = runningTotal;
-                for (int i = 1; i < events.Count; i++)
+                for (int i = 0; i < events.Count; i++)
                 {
                     events[i].Total = runningTotal + events[i].Amount;
-                    if (i < 10) Console.WriteLine(events[i].Total);
+                    _context.Entry(events[i]).Property(ev => ev.Total).IsModified = true;
                     runningTotal = events[i].Total;
-                    if (events[i].Summary == "Amazon Prime") {
-                        Console.WriteLine($"Amazon Prime {events[i].Date}");
-                    }
+
+                    if (i < 10) Console.WriteLine($"{events[i].Date}: {events[i].Summary} = {events[i].Total}");
                 }
             }
 

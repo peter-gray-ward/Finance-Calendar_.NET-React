@@ -28,7 +28,7 @@ namespace FinanceCalendar
                 throw new UnauthorizedAccessException("Token is missing or invalid.");
             }
 
-            var account = DecodeToken(token);
+            Account account = DecodeToken(token);
             var user = _context.Users.SingleOrDefault(u => u.Id == account.UserId);
             if (user == null)
             {
@@ -49,10 +49,13 @@ namespace FinanceCalendar
                 new Claim("CheckingBalance", user.CheckingBalance.ToString()),
                 new Claim("Month", user.Account.Month.ToString()),
                 new Claim("Year", user.Account.Year.ToString()),
-                new Claim("UserId", user.Id.ToString())
+                new Claim("UserId", user.Id.ToString()),
+                new Claim("TimeZone", "Eastern Standard Time") // 👈 hardcoded timezone
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key")));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
+                _configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key")));
+
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
@@ -64,6 +67,7 @@ namespace FinanceCalendar
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+
 
         public Account DecodeToken(string token)
         {

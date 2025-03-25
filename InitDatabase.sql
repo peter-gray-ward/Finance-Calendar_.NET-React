@@ -4,7 +4,8 @@ CREATE TABLE IF NOT EXISTS "Users" (
     "UserName" VARCHAR(255) NOT NULL,
     "CheckingBalance" DECIMAL NOT NULL,
     "Password" VARCHAR(255) NOT NULL,
-    "ProfileThumbnailBase64" TEXT
+    "ProfileThumbnailBase64" TEXT,
+    "TimeZone" VARCHAR(255)
 );
 
 -- Create the Event table

@@ -20,6 +20,7 @@ namespace FinanceCalendar
         [Required]
         public string Password { get; set; } = string.Empty;
         public string ProfileThumbnailBase64 { get; set; } = string.Empty;
+        public string TimeZone { get; set; } = "Eastern Standard Time";
         public virtual Account Account { get; set; } = new Account();
     }
 

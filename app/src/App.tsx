@@ -55,6 +55,9 @@ function App({ _user }: { _user: User }) {
 
   const updateCheckingBalanceDebounceRef = useRef<NodeJS.Timeout | null>(null);
   const updateCheckingBalance = useCallback(() => {
+    if (updateCheckingBalanceDebounceRef.current !== null) {
+      clearTimeout(updateCheckingBalanceDebounceRef.current);
+    }
     const checkingBalance = checkingBalanceRef.current!.value;
     setUser({
       ...user,
