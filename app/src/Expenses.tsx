@@ -51,7 +51,9 @@ export default function Expenses({ user, setUser, setCalendar }: {
 
     let el = event.target as HTMLElement;
     while (el && !el.classList.contains('tr')) el = el.parentElement as HTMLElement;
+
     const expense = serializeRow<Expense>(el, Expense, { userId: user.id } as Expense);
+    
     setUser({
       ...user,
       account: {
@@ -64,6 +66,8 @@ export default function Expenses({ user, setUser, setCalendar }: {
         })
       }
     });
+
+    if (expense.amount.trim() == "") return;
 
     updateExpenseDebounceRef.current = setTimeout(() => {
       xhr({

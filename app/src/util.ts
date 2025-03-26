@@ -41,7 +41,8 @@ export const serializeRow = <T>(tr: HTMLElement, cls: new () => T, additionalPro
     const keys = Object.keys(instance as {}) as (keyof T)[];
     const additionalPropertyKeys = Object.keys(additionalProperties as {}) as (keyof T)[];
     const result = {} as T;
-
+    let error = false;
+    
     for (const key of keys) {
         const input = tr.querySelector<HTMLInputElement>(`[name="${new String(key)}"]`);
         if (input) {

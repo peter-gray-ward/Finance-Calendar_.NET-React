@@ -273,6 +273,7 @@ namespace FinanceCalendar.Services
 
         public ServiceResponse<object> UpdateExpense(User user, Expense expense)
         {
+            Console.WriteLine("UpdateExpense");
             try
             {
                 var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
@@ -288,6 +289,12 @@ namespace FinanceCalendar.Services
                         if (prop.Name == "Id") continue;
 
                         var newValue = prop.GetValue(expense);
+
+                        if (prop.Name == "Amount" && newValue == null) newValue = 0.0;
+
+                        Console.WriteLine($"{prop.Name} {newValue}");
+
+
                         prop.SetValue(existingExpense, newValue);
                     }
                 }

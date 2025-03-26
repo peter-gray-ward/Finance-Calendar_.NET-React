@@ -111,11 +111,10 @@ namespace FinanceCalendar.Services
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim("UserName", user.UserName),
-                new Claim("CheckingBalance", user.CheckingBalance.ToString()),
                 new Claim("Month", user.Account.Month.ToString()),
                 new Claim("Year", user.Account.Year.ToString()),
                 new Claim("UserId", user.Id.ToString()),
-                new Claim("TimeZone", "Eastern Standard Time") // 👈 hardcoded timezone
+                new Claim("TimeZone", user.TimeZone)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(
@@ -133,6 +132,53 @@ namespace FinanceCalendar.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
+        public ServiceResponse<string> UpdateToken(string token, Account account)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key"));
+
+            try
+            {
+                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = _configuration["Jwt:Issuer"],
+                    ValidAudience = _configuration["Jwt:Audience"],
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateLifetime = false // We may be updating expired tokens too
+                }, out SecurityToken validatedToken);
+
+                var jwtToken = (JwtSecurityToken)validatedToken;
+                var claims = jwtToken.Claims.ToList();
+
+                claims.RemoveAll(c => c.Type == "Month" || c.Type == "Year");
+                claims.Add(new Claim("Month", account.Month.ToString()));
+                claims.Add(new Claim("Year", account.Year.ToString()));
+
+                var creds = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256);
+
+                var newToken = new JwtSecurityToken(
+                    issuer: _configuration["Jwt:Issuer"],
+                    audience: _configuration["Jwt:Audience"],
+                    claims: claims,
+                    expires: DateTime.Now.AddMinutes(30),
+                    signingCredentials: creds);
+
+                return new ServiceResponse<string>.Builder()
+                    .success(true)
+                    .data(tokenHandler.WriteToken(newToken))
+                    .build();
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<string>.Builder()
+                    .success(false)
+                    .message(ex.Message)
+                    .build();
+            }
+        }
 
         public Account DecodeToken(string token)
         {

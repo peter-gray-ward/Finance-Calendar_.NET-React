@@ -176,8 +176,8 @@ body {
     color: white;
 
     &.updated {
-      border: 1px solid lawngreen;
-      outline: 1px solid green;
+      /*border: 1px solid lawngreen;
+      outline: 1px solid green;*/
     }
 
     .th {
@@ -515,7 +515,7 @@ select {
         height: 100%;
         box-sizing: border-box;
         align-items: start;
-        justify-content: center;
+        justify-content: space-around;
         padding-top: 0.5vw;
         padding-left: 0.5vw;
         padding-right: 0.5vw;
@@ -525,6 +525,12 @@ select {
           background: whitesmoke;
           width: 100%;
           align-self: start;
+          label {
+            font-size: 2rem;
+          }
+          input {
+            font-size: 1.5rem;
+          }
         }
 
         #amount-div {

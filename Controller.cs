@@ -52,7 +52,7 @@ namespace FinanceCalendar
             Response.Cookies.Append("finance-calendar-jwt", registration.Data, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = false,
                 SameSite = SameSiteMode.Strict
             });
 
@@ -203,12 +203,26 @@ namespace FinanceCalendar
 
             user = _calendar.ChangeMonth(user, direction);
 
-            var token = _security.GenerateToken(user);
+            Console.WriteLine(user.Account.Month);
 
-            Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
+            string token = Request.Cookies["finance-calendar-jwt"];
+
+            ServiceResponse<string> tokenUpdate = _security.UpdateToken(token, user.Account);
+
+            if (!tokenUpdate.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(tokenUpdate.Message)
+                        .build()
+                );
+            }
+
+            Response.Cookies.Append("finance-calendar-jwt", tokenUpdate.Data, new CookieOptions
             {
                 HttpOnly = true,
-                Secure = true,
+                Secure = false,
                 SameSite = SameSiteMode.Strict
             });
 
