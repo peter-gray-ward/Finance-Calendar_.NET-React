@@ -1,36 +1,88 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocation, useParams } from 'react-router-dom';
-import { IEvent, Position, User } from './types';
+import { IEvent, Position, User, ApiResponse, Day } from './types';
+import { xhr } from './util';
 
-export default function Event({ origin, setEvent }: { origin: Position, setEvent: React.Dispatch<React.SetStateAction<IEvent|null>> }) {
+export default function Event({ 
+  origin, 
+  setEvent,
+  setCalendar
+}: { 
+  origin: Position, 
+  setEvent: React.Dispatch<React.SetStateAction<IEvent|null>>
+  setCalendar: React.Dispatch<React.SetStateAction<Day[][]>>
+}) {
   const { id } = useParams();
   const location = useLocation();
   const { event, origin: initialOrigin, user } = location.state || {};
+  const [saved, setSaved] = useState<boolean>(false);
   const [localEvent, setLocalEvent] = useState<IEvent>(event);
   useEffect(() => {
-    const frame = requestAnimationFrame(() => {
+    if (event) {
+      setLocalEvent(event);
+    }
+  }, [event]);
+  useEffect(() => {
+    const waitForElement = () => {
       const calendarEvent = document.getElementById(`event-${event.id}`);
       if (calendarEvent) {
         setEvent(event);
+        setLocalEvent(event);
+      } else {
+        window.requestAnimationFrame(waitForElement);
       }
-    });
-    // Clean up on unmount
-    return () => cancelAnimationFrame(frame);
+    }
+    waitForElement();
   }, []);
   const eventRef = useRef<HTMLDivElement|null>(null);
   const saveThisEvent = useCallback(() => {
-
-  }, []);
+    xhr({
+      method: 'PUT',
+      url: '/save-event',
+      body: localEvent
+    }).then((res: ApiResponse) => {
+      if (res.success) {
+        console.log("@", res);
+        setCalendar(res.data as Day[][]);
+        setSaved(true)
+        setTimeout(() => {
+          setSaved(false);
+        }, 740);
+      }
+    });
+  }, [localEvent]);
   const saveAllTheseEvents = useCallback(() => {
-
-  }, []);
+    xhr({
+      method: 'PUT',
+      url: '/save-event?all=true',
+      body: localEvent
+    }).then((res: ApiResponse) => {
+      if (res.success) {
+        setCalendar(res.data as Day[][]);
+        setSaved(true)
+        setTimeout(() => {
+          setSaved(false);
+        }, 740);
+      }
+    });
+  }, [localEvent]);
   const deleteThisEvent = useCallback(() => {
 
   }, []);
   const deleteAllTheseEvents = useCallback(() => {
 
   }, []);
-	return <div className="modal" style={{ left: origin.left + 'px', top: origin.top + 'px' }}>
+
+  if (!origin.left && !origin.top) return null;
+
+  console.log(event.summary, localEvent.summary);
+
+	return <div className="modal" 
+    style={{
+      left: origin.left + 'px', 
+      top: origin.top + 'px',
+      border: saved ? '2px solid lawngreen' : 'none'
+    }}>
     <div className='id modal-content' id="event-edit">
       <div id="modal-event" ref={eventRef}>
         <input disabled className="hidden" name="id" 
@@ -72,13 +124,13 @@ export default function Event({ origin, setEvent }: { origin: Position, setEvent
             <div>
               <label>Date</label>
               <input name="date" className="td focusable" type="date" 
-                value={localEvent.date}
+                value={localEvent.date.split("T")[0]}
                 onChange={(e) => setLocalEvent({ ...localEvent, date: e.target.value })} />
             </div>
             <div>
               <label>End Date</label>
               <input name="recurrenceEndDate" className="td focusable" type="date" 
-                value={localEvent.recurrenceEndDate}
+                value={localEvent.recurrenceEndDate.split("T")[0]}
                 onChange={(e) => setLocalEvent({ ...localEvent, recurrenceEndDate: e.target.value })} />
             </div>
           </div>

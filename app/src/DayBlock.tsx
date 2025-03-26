@@ -20,6 +20,7 @@ export default function DayBlock(
     const eventOrigin: Position = { left: x, top: y } as Position;
     setEventOrigin(eventOrigin);
     setEvent(event);
+    console.log(`/event/${event.id}`)
     navigate(`/event/${event.id}`, {
       state: {
         event,

@@ -374,5 +374,42 @@ namespace FinanceCalendar
                     .build()
             );
         }
+
+        [Authorize]
+        [HttpPut]
+        [Route("save-event")]
+        public IActionResult SaveThisEvent([FromBody] Event ev, [FromQuery] bool all = false)
+        {
+            var userRes = _security.GetUser(Request);
+            User user = userRes.User;
+            if (ev.UserId != user.Id)
+            {
+                return BadRequest(
+                    new ApiResponse<Event>.Builder()
+                        .success(false)
+                        .data(ev)
+                        .message("Invalid event data.")
+                        .build()
+                ); 
+            }
+            ServiceResponse<Event> savedEvent = _calendar.SaveEvent(user, ev, all);
+            if (!savedEvent.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .data(ev)
+                        .message(savedEvent.Message)
+                        .build()
+                ); 
+            }
+            var cal = _calendar.GenerateCalendar(user);
+            return Ok(
+                new ApiResponse<List<List<Day>>>.Builder()
+                    .success(true)
+                    .data(cal)
+                    .build()
+            );
+        }  
     }
 }

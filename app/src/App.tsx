@@ -22,12 +22,10 @@ function App({ _user }: { _user: User }) {
   const eventOriginRef = useRef<HTMLElement | null>(null);
 
   const handleResize = () => {
-    console.log("...", event)
     if (event) {
       const calendarEvent = document.getElementById(`event-${event.id}`);
       if (calendarEvent) {
         const rect = calendarEvent.getBoundingClientRect();
-        console.log(rect)
         setEventOrigin({
           left: rect.left + 400 > window.innerWidth ? window.innerWidth - 410 : rect.left,
           top: rect.top + 200 > window.innerHeight ? window.innerHeight - 210 : rect.top
@@ -42,7 +40,6 @@ function App({ _user }: { _user: User }) {
       const calendarEvent = document.getElementById(`event-${event.id}`);
       if (calendarEvent) {
         const rect = calendarEvent.getBoundingClientRect();
-        console.log(rect)
         setEventOrigin({
           left: rect.left + 400 > window.innerWidth ? window.innerWidth - 410 : rect.left,
           top: rect.top + 200 > window.innerHeight ? window.innerHeight - 210 : rect.top
@@ -142,7 +139,8 @@ function App({ _user }: { _user: User }) {
           calendar.map((week: Day[], a: number) => (
             <div className="week" key={a}>
               {
-                week.map((day: Day, b: number) => <DayBlock 
+                week.map((day: Day, b: number) => <DayBlock
+                  key={`${a}.${b}`}
                   user={user} 
                   day={day} 
                   a={a} b={b} 
@@ -157,7 +155,11 @@ function App({ _user }: { _user: User }) {
       </div>
     </main>
     <Routes>
-      <Route path="/event/:id" element={<Event origin={eventOrigin} setEvent={setEvent} />} />
+      <Route path="/" element={<></>} />
+      <Route path="/event/:id" element={<Event 
+        origin={eventOrigin} 
+        setEvent={setEvent}
+        setCalendar={setCalendar} />} />
     </Routes>
   </Router>
 }

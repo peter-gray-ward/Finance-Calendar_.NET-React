@@ -19,7 +19,7 @@ export interface User {
 }
 
 export interface ApiResponse {
-    error?: string;
+    success?: boolean;
     message?: string;
     data?: any;
     user?: User;

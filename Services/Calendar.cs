@@ -292,9 +292,6 @@ namespace FinanceCalendar.Services
 
                         if (prop.Name == "Amount" && newValue == null) newValue = 0.0;
 
-                        Console.WriteLine($"{prop.Name} {newValue}");
-
-
                         prop.SetValue(existingExpense, newValue);
                     }
                 }
@@ -308,6 +305,61 @@ namespace FinanceCalendar.Services
                 return new ServiceResponse<object>.Builder()
                     .success(false)
                     .message(e.Message)
+                    .build();
+            }
+        }
+
+        public ServiceResponse<Event> SaveEvent(User user, Event ev, bool all)
+        {
+            try
+            {
+                var existingEvent =  _context.Events.FirstOrDefault(e => e.Id == ev.Id);
+                
+                if (existingEvent == null)
+                {
+                    _context.Events.Add(ev);
+                }
+                else
+                {
+                    var existingEvents = _context.Events
+                        .Where(e => all ? e.RecurrenceId == ev.RecurrenceId : e.Id == ev.Id)
+                        .ToList();
+
+                    TimeSpan dateDiff = ev.Date - existingEvent.Date;
+
+                    foreach (Event evt in existingEvents)
+                    {
+                        var properties = typeof(Event).GetProperties();
+                        foreach (var prop in properties)
+                        {
+                            if (prop.Name == "Id") continue;
+
+                            var newValue = prop.GetValue(ev);
+
+                            if (all && prop.Name == "Date" && newValue is DateTime newDate)
+                            {
+                                newValue = evt.Date + dateDiff;
+                            }
+
+                            prop.SetValue(evt, newValue);
+                        }
+                    }
+                }
+
+                _context.SaveChanges();
+
+                return new ServiceResponse<Event>.Builder()
+                    .success(true)
+                    .data(existingEvent ?? ev)
+                    .user(user)
+                    .build();
+            }
+            catch (Exception e)
+            {
+              return new ServiceResponse<Event>.Builder()
+                    .success(false)
+                    .message(e.Message)
+                    .data(ev)
                     .build();
             }
         }
