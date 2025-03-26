@@ -16,6 +16,7 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using FinanceCalendar;
+using FinanceCalendar.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -29,7 +30,7 @@ builder.Services.AddCors(options =>
 });
 
 builder.Services.AddControllers();
-builder.Services.AddScoped<TokenService>();
+builder.Services.AddScoped<Security>();
 builder.Services.AddScoped<Calendar>();
 
 builder.Services.AddDbContext<FinanceCalendarContext>(options =>

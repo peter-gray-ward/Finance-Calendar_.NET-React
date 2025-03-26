@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.IdentityModel.Tokens.Jwt;
 using System.Web;
+using FinanceCalendar.Services;
 
 namespace FinanceCalendar
 {
@@ -13,15 +14,13 @@ namespace FinanceCalendar
     public class FinanceCalendarController : ControllerBase
     {
         private readonly Regex userIdsPattern = new Regex(@"^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})(\|[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12})*$");
-        private readonly TokenService _tokenService;
-        private readonly FinanceCalendarContext _context;
-        private readonly Calendar calendar;
+        private readonly Security _security;
+        private readonly Calendar _calendar;
 
-        public FinanceCalendarController(TokenService tokenService, FinanceCalendarContext context, Calendar cal)
+        public FinanceCalendarController(Security security, Calendar calendar)
         {
-            _tokenService = tokenService;
-            _context = context;
-            calendar = cal;
+            _security = security;
+            _calendar = calendar;
         }
 
         [HttpPost]
@@ -32,33 +31,25 @@ namespace FinanceCalendar
             {
                 return BadRequest(
                     new ApiResponse<object>.Builder()
+                        .success(false)
                         .message("Invalid user data.")
-                        .Build()
+                        .build()
                 );
             }
 
-            // Check if a user with the same username already exists
-            if (_context.Users.Any(u => u.UserName == user.UserName))
+            ServiceResponse<string> registration = _security.RegisterUser(user);
+
+            if (!registration.Success)
             {
                 return Conflict(
                     new ApiResponse<object>.Builder()
-                        .message("A user with the same username already exists.")
-                        .Build()
+                        .success(false)
+                        .message(registration.Message)
+                        .build()
                 );
             }
 
-            // Hash the password using BCrypt
-            user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
-
-            _context.Users.Add(user);
-            _context.SaveChanges();
-
-            var account = new Account { UserId = user.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
-            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
-            user.Account = account;
-            var token = _tokenService.GenerateToken(user);
-
-            Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
+            Response.Cookies.Append("finance-calendar-jwt", registration.Data, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = true,
@@ -67,9 +58,10 @@ namespace FinanceCalendar
 
             return Ok(
                 new ApiResponse<User>.Builder()
-                    .message("User registered successfully.")
-                    .user(user)
-                    .Build()
+                    .success(true)
+                    .message(registration.Message)
+                    .user(registration.User)
+                    .build()
             );
         }
 
@@ -81,28 +73,25 @@ namespace FinanceCalendar
             {
                 return BadRequest(
                     new ApiResponse<object>.Builder()
-                        .error("Invalid login data")
-                        .Build()
+                        .success(false)
+                        .message("Invalid login data")
+                        .build()
                 );
             }
 
-            var existingUser = _context.Users.SingleOrDefault(u => u.UserName == user.UserName);
-            if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
+            ServiceResponse<string> login = _security.LoginUser(user);
+
+            if (!login.Success)
             {
-                return BadRequest(
+                return Conflict(
                     new ApiResponse<object>.Builder()
-                        .error("Invalid username or password")
-                        .Build()
+                        .success(false)
+                        .message(login.Message)
+                        .build()
                 );
             }
-
-            var account = new Account { UserId = existingUser.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
-            account.Expenses = _context.Expenses.Where(e => e.UserId == existingUser.Id).ToList();
-            existingUser.Account = account;
-
-            var token = _tokenService.GenerateToken(existingUser);
             
-            Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
+            Response.Cookies.Append("finance-calendar-jwt", login.Data, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = false,
@@ -110,9 +99,10 @@ namespace FinanceCalendar
             });
             return Ok(
                 new ApiResponse<User>.Builder()
+                    .success(true)
                     .message("Login successful.")
-                    .user(existingUser)
-                    .Build()
+                    .user(login.User)
+                    .build()
             );
         }
 
@@ -121,34 +111,24 @@ namespace FinanceCalendar
         [Route("get-user")]
         public IActionResult GetUser()
         {  
-            var userId = User.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Sub)?.Value;
+            ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            if (string.IsNullOrEmpty(userId))
+            if (!userRes.Success)
             {
-                return _Logout();
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
             }
-
-            var user = _context.Users.SingleOrDefault(u => u.Id == Guid.Parse(userId));
-            if (user == null)
-            {
-                return _Logout();
-            }
-
-            var token = Request.Cookies["finance-calendar-jwt"];
-            if (string.IsNullOrEmpty(token))
-            {
-                return _Logout();
-            }
-
-            var account = _tokenService.DecodeToken(token);
-            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
-            user.Account = account;
 
             return Ok(
                 new ApiResponse<User>.Builder()
+                    .success(true)
                     .message("User retrieved successfully.")
-                    .user(user)
-                    .Build()
+                    .user(userRes.User)
+                    .build()
             );
         }
 
@@ -157,8 +137,9 @@ namespace FinanceCalendar
             Response.Cookies.Delete("finance-calendar-jwt");
             return Ok(
                 new ApiResponse<object>.Builder()
+                    .success(true)
                     .message("Logout successful.")
-                    .Build()
+                    .build()
             );
         }
 
@@ -175,18 +156,29 @@ namespace FinanceCalendar
         [Route("get-calendar")]
         public IActionResult GetCalendar()
         {
-            User user = _tokenService.GetUser(Request);
+            ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            Console.WriteLine("GET Calendar");
+            if (!userRes.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
+            }
 
-            List<List<Day>> cal = calendar.GenerateCalendar(user);
+            User user = userRes.User;
+
+            List<List<Day>> cal = _calendar.GenerateCalendar(user);
 
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
+                    .success(true)
                     .message("Calendar retrieved successfully.")
                     .user(user)
                     .data(cal)
-                    .Build()
+                    .build()
             );
         }
 
@@ -195,24 +187,23 @@ namespace FinanceCalendar
         [Route("change-month/{direction}")]
         public IActionResult UpdateMonth(int direction)
         {
-            User user = _tokenService.GetUser(Request);
-            user.Account.Month += direction;
-            if (direction == 0)
+            ServiceResponse<object> userRes = _security.GetUser(Request);
+
+            if (!userRes.Success)
             {
-                user.Account.Month = DateTime.Now.Month;
-                user.Account.Year = DateTime.Now.Year;
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
             }
-            else if (user.Account.Month > 12)
-            {
-                user.Account.Month = 1;
-                user.Account.Year += 1;
-            }
-            else if (user.Account.Month < 1)
-            {
-                user.Account.Month = 12;
-                user.Account.Year -= 1;
-            }
-            var token = _tokenService.GenerateToken(user);
+
+            User user = userRes.User;
+
+            user = _calendar.ChangeMonth(user, direction);
+
+            var token = _security.GenerateToken(user);
 
             Response.Cookies.Append("finance-calendar-jwt", token, new CookieOptions
             {
@@ -221,14 +212,15 @@ namespace FinanceCalendar
                 SameSite = SameSiteMode.Strict
             });
 
-            List<List<Day>> cal = calendar.GenerateCalendar(user);
+            List<List<Day>> cal = _calendar.GenerateCalendar(user);
 
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
+                    .success(true)
                     .message("Month updated successfully.")
                     .user(user)
                     .data(cal)
-                    .Build()
+                    .build()
             );
         }
 
@@ -237,18 +229,19 @@ namespace FinanceCalendar
         [Route("add-expense")]
         public IActionResult AddExpense()
         {
-            User user = _tokenService.GetUser(Request);
+            ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            Expense expense = new() { UserId = user.Id, Id = Guid.NewGuid() };
-            _context.Expenses.Add(expense);
-            _context.SaveChanges();
+            Expense expense = _calendar.AddExpense(userRes.User);
+
+            userRes = _security.GetUser(Request);
 
             return Ok(
                 new ApiResponse<Expense>.Builder()
+                    .success(true)
                     .message("Expense added successfully.")
-                    .user(user)
+                    .user(userRes.User)
                     .data(expense)
-                    .Build()
+                    .build()
             );
         }
 
@@ -257,25 +250,28 @@ namespace FinanceCalendar
         [Route("delete-expense/{expenseId}")]
         public IActionResult DeleteExpense(Guid expenseId)
         {
-            User user = _tokenService.GetUser(Request);
+            ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            var expense = _context.Expenses.FirstOrDefault(e => e.Id == expenseId);
-            if (expense == null)
+            ServiceResponse<object> deleteExpense = _calendar.DeleteExpense(userRes.User, expenseId);
+
+            if (!deleteExpense.Success)
             {
                 return NotFound(
                     new ApiResponse<object>.Builder()
-                        .message("Expense not found.")
-                        .Build()
+                        .success(false)
+                        .message(deleteExpense.Message)
+                        .build()
                 );
             }
 
-            _context.Expenses.Remove(expense);
-            _context.SaveChanges();
+            userRes = _security.GetUser(Request);
 
             return Ok(
                 new ApiResponse<object>.Builder()
+                    .success(true)
+                    .user(userRes.User)
                     .message("Expense deleted successfully.")
-                    .Build()
+                    .build()
             );
         }
 
@@ -284,32 +280,26 @@ namespace FinanceCalendar
         [Route("update-expense")]
         public IActionResult UpdateExpense([FromBody] Expense expense)
         {
-            User user = _tokenService.GetUser(Request);
+            ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
-            if (existingExpense == null)
+            ServiceResponse<object> update = _calendar.UpdateExpense(userRes.User, expense);
+
+            if (!update.Success)
             {
-                _context.Expenses.Add(expense);
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(update.Message)
+                        .build()
+                );
             }
-            else
-            {
-                var properties = typeof(Expense).GetProperties();
-                foreach (var prop in properties)
-                {
-                    if (prop.Name == "Id") continue;
-
-                    var newValue = prop.GetValue(expense);
-                    prop.SetValue(existingExpense, newValue);
-                }
-            }
-
-            _context.SaveChanges();
 
             return Ok(
                 new ApiResponse<Expense>.Builder()
+                    .success(true)
                     .message("Expense successfully updated")
                     .data(expense)
-                    .Build()
+                    .build()
             );
         }
 
@@ -318,15 +308,27 @@ namespace FinanceCalendar
         [Route("refresh-calendar")]
         public IActionResult RefreshCalendar()
         {
-            User user = _tokenService.GetUser(Request);
-            user.Account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
-            List<List<Day>> cal = calendar.GenerateEventsFromExpenses(user);
+            ServiceResponse<object> userRes = _security.GetUser(Request);
+            
+            ServiceResponse<List<List<Day>>> cal = _calendar.RefreshCalendar(userRes.User);
+
+            if (!cal.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(cal.Message)
+                        .build()
+                );
+            }
+
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
+                    .success(true)
                     .message("Calendar refreshed successfully.")
-                    .user(user)
-                    .data(cal)
-                    .Build()
+                    .user(userRes.User)
+                    .data(cal.Data)
+                    .build()
             );
         }
 
@@ -335,26 +337,27 @@ namespace FinanceCalendar
         [Route("update-checking-balance")]
         public IActionResult UpdateCheckingBalance([FromBody] double checkingBalance)
         {
-            User _user = _tokenService.GetUser(Request);
-            var user = _context.Users.Where(u => u.Id == _user.Id).FirstOrDefault();
-            if (user == null)
+            ServiceResponse<object> userRes = _security.GetUser(Request);
+            
+            ServiceResponse<List<List<Day>>> newCal = _calendar.UpdateCheckingBalance(userRes.User, checkingBalance);
+
+            if (!newCal.Success)
             {
-                return _Logout();
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(newCal.Message)
+                        .build()
+                );
             }
-            user.CheckingBalance = checkingBalance;
-            _context.SaveChanges();
-
-            Console.WriteLine($"update-checking-balance (new - {checkingBalance}) {user.CheckingBalance}");
-
-            calendar.CalculateEventTotals(user);
-            List<List<Day>> cal = calendar.GenerateCalendar(user);
 
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
+                    .success(true)
                     .message("Checking Balance updated successfully.")
-                    .user(user)
-                    .data(cal)
-                    .Build()
+                    .user(newCal.User)
+                    .data(newCal.Data)
+                    .build()
             );
         }
     }

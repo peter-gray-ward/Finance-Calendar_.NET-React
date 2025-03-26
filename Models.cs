@@ -87,17 +87,64 @@ namespace FinanceCalendar
         public double Total { get; set; } = 0.0;
     }
 
+    public record ServiceResponse<T> 
+    {
+        public bool Success { get; set; } = false;
+        public string? Message { get; set; }
+        public User? User { get; set; }
+        public T? Data { get; set; }
+        public ServiceResponse(bool success, string? message, User? user, T? data)
+        {
+            this.Success = success;
+            this.Message = message;
+            this.User = user;
+            this.Data = data;
+        }
+        public class Builder
+        {
+            private bool _success;
+            private string? _message;
+            private User? _user;
+            private T? _data;
+            public Builder success(bool success)
+            {
+                this._success = success;
+                return this;
+            }
+            public Builder message(string message)
+            {
+                this._message = message;
+                return this;
+            }
+            public Builder user(User user)
+            {
+                this._user = user;
+                return this;
+            }
+            public Builder data(T data)
+            {
+                this._data = data;
+                return this;
+            }
+            public ServiceResponse<T> build()
+            {
+                return new ServiceResponse<T>(_success, _message, _user, _data);
+            }
+        }
+    }
+
+
     public record ApiResponse<T>
     {
+        public bool Success { get; set; } = false;
         public string? Message { get; init; }
-        public string? Error { get; init; }
         public T? Data { get; init; }
         public User? User { get; init; }
 
-        public ApiResponse(string? message, string? error, T? data, User? user)
+        public ApiResponse(bool success, string? message, T? data, User? user)
         {
+            Success = success;
             Message = message;
-            Error = error;
             Data = data;
             User = user;
         }
@@ -105,7 +152,7 @@ namespace FinanceCalendar
         public class Builder
         {
             private string? _message;
-            private string? _error;
+            private bool _success = false;
             private T? _data;
             private User? _user;
             public Builder message(string message)
@@ -113,9 +160,9 @@ namespace FinanceCalendar
                 this._message = message;
                 return this;
             }
-            public Builder error(string error)
+            public Builder success(bool success)
             {
-                this._error = error;
+                this._success = success;
                 return this;
             }
             public Builder data(T data)
@@ -128,9 +175,9 @@ namespace FinanceCalendar
                 this._user = user;
                 return this;
             }
-            public ApiResponse<T> Build()
+            public ApiResponse<T> build()
             {
-                return new ApiResponse<T>(_message, _error, _data, _user);
+                return new ApiResponse<T>(_success, _message, _data, _user);
             }
         }
     }

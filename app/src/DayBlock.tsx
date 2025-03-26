@@ -30,7 +30,6 @@ export default function DayBlock(
   }, []);
   const blurEvent = useCallback((event: MouseEvent) => {
     setEvent(null);
-    setEventOrigin({ left: 0, top: 0 });
     navigate('/');
   }, []);
   const updateCheckingBalanceDebounceRef = useRef<NodeJS.Timeout | null>(null);

@@ -1,8 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using FinanceCalendar;
 
-namespace FinanceCalendar
+namespace FinanceCalendar.Services
 {
     public class Calendar
     {
@@ -32,8 +33,6 @@ namespace FinanceCalendar
             startDate = startDate.AddDays(-(int)startDate.DayOfWeek);
 
             var timeZoneId = user.TimeZone ?? "UTC";
-
-            Console.WriteLine($"Generating a calendar in {timeZoneId}");
 
             TimeZoneInfo userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
             DateTime userNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, userTimeZone);
@@ -107,7 +106,6 @@ namespace FinanceCalendar
             events = events.Where(e => e.Date >= DateTime.UtcNow.Date).ToList();
 
             double runningTotal = user.CheckingBalance;
-            Console.WriteLine($"CalculateEventTotals {runningTotal}");
             if (events.Count > 0)
             {
                 for (int i = 0; i < events.Count; i++)
@@ -121,6 +119,74 @@ namespace FinanceCalendar
             }
 
             _context.SaveChanges();
+        }
+
+        public ServiceResponse<List<List<Day>>> RefreshCalendar(User user)
+        {
+            user.Account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
+            try
+            {
+                List<List<Day>> cal = GenerateEventsFromExpenses(user);
+                return new ServiceResponse<List<List<Day>>>.Builder()
+                    .success(true)
+                    .data(cal)
+                    .build();
+            }
+            catch (Exception e)
+            {
+                return new ServiceResponse<List<List<Day>>>.Builder()
+                    .success(false)
+                    .message(e.Message)
+                    .build();
+            }
+        }
+
+        public User ChangeMonth(User user, int direction)
+        {
+            user.Account.Month += direction;
+
+            if (direction == 0)
+            {
+                user.Account.Month = DateTime.Now.Month;
+                user.Account.Year = DateTime.Now.Year;
+            }
+            else if (user.Account.Month > 12)
+            {
+                user.Account.Month = 1;
+                user.Account.Year += 1;
+            }
+            else if (user.Account.Month < 1)
+            {
+                user.Account.Month = 12;
+                user.Account.Year -= 1;
+            }
+
+            return user;
+        }
+
+        public ServiceResponse<List<List<Day>>> UpdateCheckingBalance(User user, double checkingBalance)
+        {
+            user.CheckingBalance = checkingBalance;
+            _context.SaveChanges();
+
+            CalculateEventTotals(user);
+
+            try
+            {
+                List<List<Day>> cal = GenerateEventsFromExpenses(user);
+                return new ServiceResponse<List<List<Day>>>.Builder()
+                    .success(true)
+                    .data(cal)
+                    .user(user)
+                    .build();
+            }
+            catch (Exception e)
+            {
+                return new ServiceResponse<List<List<Day>>>.Builder()
+                    .success(false)
+                    .message(e.Message)
+                    .build();
+            }
         }
 
         public List<List<Day>> GenerateEventsFromExpenses(User user)
@@ -145,10 +211,6 @@ namespace FinanceCalendar
                     ev.Frequency = expense.Frequency;
                     ev.Total = 0.0;
 
-                    if (ev.Summary == "Amazon Prime") {
-                        Console.WriteLine($"Amazon Prime {ev.Date}");
-                    }
-
                     eventsToInsert.Add(ev);
 
                     switch (expense.Frequency)
@@ -168,8 +230,6 @@ namespace FinanceCalendar
                     }
                 }
             }
-            Console.WriteLine($"Inserting {eventsToInsert.Count} events");
-
 
             using var transaction = _context.Database.BeginTransaction();
 
@@ -182,6 +242,67 @@ namespace FinanceCalendar
             CalculateEventTotals(user);
 
             return GenerateCalendar(user);
+        }
+
+        public Expense AddExpense(User user)
+        {
+            Expense expense = new() { UserId = user.Id, Id = Guid.NewGuid() };
+            _context.Expenses.Add(expense);
+            _context.SaveChanges();
+            return expense;
+        }
+
+        public ServiceResponse<object> DeleteExpense(User user, Guid expenseId)
+        {
+            var expense = _context.Expenses.FirstOrDefault(e => e.Id == expenseId);
+            if (expense == null)
+            {
+                return new ServiceResponse<object>.Builder()
+                    .success(false)
+                    .message("Expense not found.")
+                    .build();
+            }
+
+            _context.Expenses.Remove(expense);
+            _context.SaveChanges();
+
+            return new ServiceResponse<object>.Builder()
+                .success(true)
+                .build();
+        }
+
+        public ServiceResponse<object> UpdateExpense(User user, Expense expense)
+        {
+            try
+            {
+                var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
+                if (existingExpense == null)
+                {
+                    _context.Expenses.Add(expense);
+                }
+                else
+                {
+                    var properties = typeof(Expense).GetProperties();
+                    foreach (var prop in properties)
+                    {
+                        if (prop.Name == "Id") continue;
+
+                        var newValue = prop.GetValue(expense);
+                        prop.SetValue(existingExpense, newValue);
+                    }
+                }
+
+                _context.SaveChanges();
+
+                return new ServiceResponse<object>.Builder().success(true).build();
+            }
+            catch (Exception e)
+            {
+                return new ServiceResponse<object>.Builder()
+                    .success(false)
+                    .message(e.Message)
+                    .build();
+            }
         }
     }
 }
