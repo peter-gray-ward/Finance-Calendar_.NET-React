@@ -6,6 +6,7 @@ export default function Event({ origin, setEvent }: { origin: Position, setEvent
   const { id } = useParams();
   const location = useLocation();
   const { event, origin: initialOrigin, user } = location.state || {};
+  const [localEvent, setLocalEvent] = useState<IEvent>(event);
   useEffect(() => {
     const frame = requestAnimationFrame(() => {
       const calendarEvent = document.getElementById(`event-${event.id}`);
@@ -32,19 +33,24 @@ export default function Event({ origin, setEvent }: { origin: Position, setEvent
 	return <div className="modal" style={{ left: origin.left + 'px', top: origin.top + 'px' }}>
     <div className='id modal-content' id="event-edit">
       <div id="modal-event" ref={eventRef}>
-        <input disabled className="hidden" name="id" value={event.id} />
-        <input disabled className="hidden" name="recurrenceId" value={event.recurrenceId} />
+        <input disabled className="hidden" name="id" 
+          value={localEvent.id} />
+        <input disabled className="hidden" 
+          name="recurrenceId" 
+          value={localEvent.recurrenceId}/>
         <div className="upper-div-collection">
           <div id="summary-div">
             <label>Summary</label>
-            <input type="text" className="this focusable"
-              value={event.summary} 
-              name="summary" />
+            <textarea className="this focusable"
+              value={localEvent.summary} 
+              name="summary"
+              onChange={(e) => setLocalEvent({ ...localEvent, summary: e.target.value })}  />
           </div>
           <div id="frequency-container">
             <label>Frequency</label>
             <div className="td select-container focusable">
-              <select value={event.frequency}>
+              <select value={localEvent.frequency}
+                onChange={(e) => setLocalEvent({ ...localEvent, frequency: e.target.value })}>
                 <option value="monthly">Monthly</option>
                 <option value="weekly">Weekly</option>
                 <option value="biweekly">BiWeekly</option>
@@ -56,20 +62,24 @@ export default function Event({ origin, setEvent }: { origin: Position, setEvent
         <div id="time-container">
           <div id="amount-div">
             <label>Amount</label>
-            <input className="this focusable" type="number" id="event-amount" name="amount" 
-              value={event.amount} />
+            <input className={`this focusable ${localEvent.amount < 0 ? 'negative' : 'positive'}`} 
+              type="number" id="event-amount" name="amount" 
+              value={localEvent.amount}
+              onChange={(e) => setLocalEvent({ ...localEvent, amount: +e.target.value })} />
           </div>
           
           <div id="date-container">
             <div>
               <label>Date</label>
               <input name="date" className="td focusable" type="date" 
-                value={event.date} />
+                value={localEvent.date}
+                onChange={(e) => setLocalEvent({ ...localEvent, date: e.target.value })} />
             </div>
             <div>
               <label>End Date</label>
               <input name="recurrenceEndDate" className="td focusable" type="date" 
-                value={event.recurrenceEndDate} />
+                value={localEvent.recurrenceEndDate}
+                onChange={(e) => setLocalEvent({ ...localEvent, recurrenceEndDate: e.target.value })} />
             </div>
           </div>
         </div>
@@ -77,8 +87,8 @@ export default function Event({ origin, setEvent }: { origin: Position, setEvent
       <div className="button-footer">
         <button id="save-this-event" className="focusable" onClick={saveThisEvent}>save</button>
         <button id="save-this-and-future-events" className="focusable" onClick={saveAllTheseEvents}>save all</button>
-        <button id="clude-this-event" className="focusable">{ event.exclude ? 'exclude' : 'include' }</button>
-        <button id="clude-all-these-events" className="focusable">{ event.exclude ? 'exclude' : 'include' } all</button>
+        <button id="clude-this-event" className="focusable">{ localEvent.exclude ? 'exclude' : 'include' }</button>
+        <button id="clude-all-these-events" className="focusable">{ localEvent.exclude ? 'exclude' : 'include' } all</button>
         <button id="delete-this-event" className="focusable" onClick={deleteThisEvent}>delete</button>
         <button id="delete-all-these-events" className="focusable" onClick={deleteAllTheseEvents}>delete all</button>
       </div>

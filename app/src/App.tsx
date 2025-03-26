@@ -9,6 +9,7 @@ import Expenses from './Expenses';
 import Debts from './Debts';
 import Event from './Event';
 import DayBlock from './DayBlock';
+import Navigation from './Navigation';
 
 function App({ _user }: { _user: User }) {
   const [user, setUser] = useState(_user);
@@ -18,7 +19,6 @@ function App({ _user }: { _user: User }) {
   const [eventOrigin, setEventOrigin] = useState<Position>({ top: 0, left: 0 } as Position);
   const [event, setEvent] = useState<IEvent | null>(null);
   const [calendar, setCalendar] = useState<Day[][]>([]);
-  const [expanding, setExpanding] = useState<boolean>(false);
   const eventOriginRef = useRef<HTMLElement | null>(null);
 
   const handleResize = () => {
@@ -50,20 +50,6 @@ function App({ _user }: { _user: User }) {
       }
     }
   }, [event]);
-
-  const expandToBudget = useCallback(() => {
-    if (expanding) return;
-    setExpanding(true);
-
-    const body = document.body;
-    const header = document.querySelector('header');
-
-    if (!body.classList.contains('view-left')) {
-      body.classList.add('view-left');
-    } else {
-      body.classList.remove('view-left');
-    }
-  }, []);
 
   const logout = useCallback(() => {
     xhr({
@@ -113,7 +99,7 @@ function App({ _user }: { _user: User }) {
   }, []);
 
   return <Router>
-    <button id="expand-to-budget" onClick={expandToBudget}>☰</button>
+    <Navigation setEvent={setEvent} />
     <header id="left">
       <button onClick={logout}>logout</button>
       <Expenses user={user} setUser={setUser} setCalendar={setCalendar} />
@@ -157,13 +143,13 @@ function App({ _user }: { _user: User }) {
             <div className="week" key={a}>
               {
                 week.map((day: Day, b: number) => <DayBlock 
-                    user={user} 
-                    day={day} 
-                    a={a} b={b} 
-                    setEvent={setEvent}
-                    setEventOrigin={setEventOrigin}
-                    setCalendar={setCalendar}
-                    setUser={setUser} />)
+                  user={user} 
+                  day={day} 
+                  a={a} b={b} 
+                  setEvent={setEvent}
+                  setEventOrigin={setEventOrigin}
+                  setCalendar={setCalendar}
+                  setUser={setUser} />)
               }
             </div>
           ))

@@ -498,7 +498,7 @@ select {
       background-size: contain;
       height: 100%;
 
-      input {
+      input, textarea {
         background: transparent;
         border-width: 1px;
         width: 100%;
@@ -506,6 +506,9 @@ select {
         border: none;
         font-size: var(--modal-font-size);
         border-bottom: 1px dotted gray;
+        &:focus {
+          outline: none;
+        }
       }
 
       > div {
@@ -521,15 +524,30 @@ select {
         padding-right: 0.5vw;
         box-sizing: border-box;
 
+        #frequency-container {
+          width: 100%;
+          padding: 1rem 0;
+          align-self: center;
+        }
+
         #summary-div {
           background: whitesmoke;
+          flex-grow: 1;
           width: 100%;
           align-self: start;
           label {
             font-size: 2rem;
           }
-          input {
+          textarea {
+            resize: none;
             font-size: 1.5rem;
+            height: calc(100% - 1.8rem);
+            border: 1px solid lightblue;
+            background: aliceblue;
+            overflow: auto;
+            &:focus {
+              outline: none;
+            }
           }
         }
 
@@ -542,7 +560,11 @@ select {
           align-items: start;
           padding: 0;
           display: flex;
+          flex-grow: 1;
           width: 100%;
+          input {
+            font-size: 2.35rem;
+          }
         }
       }
 
@@ -550,9 +572,9 @@ select {
         display: flex;
         flex-direction: column;
 
-        #frequency-container {
-          width: 100%;
-          padding-right: 0.15rem;
+        
+        #date-container {
+          padding: 1rem 0;
         }
       }
 
