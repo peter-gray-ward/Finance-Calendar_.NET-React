@@ -1,5 +1,5 @@
 import React, { useCallback, MouseEvent, useRef } from 'react';
-import { User, Day, IEvent, Position, ApiResponse } from './types';
+import { User, Day, IEvent, Position, ApiResponse, Event } from './types';
 import { xhr } from './util';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,13 +20,23 @@ export default function DayBlock(
     const eventOrigin: Position = { left: x, top: y } as Position;
     setEventOrigin(eventOrigin);
     setEvent(event);
-    console.log(`/event/${event.id}`)
     navigate(`/event/${event.id}`, {
       state: {
         event,
         origin: eventOrigin,
         user,
       },
+    });
+  }, []);
+  const addEvent = useCallback((e: MouseEvent) => {
+    xhr({
+      method: 'PUT',
+      url: '/save-event',
+      body: new Event(day, user.id)
+    }).then((res: ApiResponse) => {
+      if (res.success) {
+        setCalendar(res.data as Day[][]);
+      }
     });
   }, []);
   const blurEvent = useCallback((event: MouseEvent) => {
@@ -56,7 +66,7 @@ export default function DayBlock(
     }, 888);
   }, []);
 
-	return <div className="day-block" key={`${a}.${b}`} onClick={blurEvent}>
+	return <div className="day-block" key={`${a}.${b}`} onClick={blurEvent} onDoubleClick={addEvent}>
     <div className="day-header">
       {
         day.isTodayOrLater ?

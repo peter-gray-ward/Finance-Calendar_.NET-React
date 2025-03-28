@@ -7,7 +7,7 @@ import { xhr, capitalizeKeys } from './util';
 import { error } from 'console';
 import Expenses from './Expenses';
 import Debts from './Debts';
-import Event from './Event';
+import EventModal from './EventModal';
 import DayBlock from './DayBlock';
 import Navigation from './Navigation';
 
@@ -53,7 +53,9 @@ function App({ _user }: { _user: User }) {
       method: 'GET',
       url: '/logout'
     }).then((res: ApiResponse) => {
-      window.location.reload();
+      if (res.success) {
+        window.location.reload();
+      }
     });
   }, []);
 
@@ -62,8 +64,9 @@ function App({ _user }: { _user: User }) {
       method: 'GET',
       url: '/get-calendar'
     }).then((res: ApiResponse) => {
-      console.log("get-calendar", res);
-      setCalendar(res.data);
+      if (res.success) {
+        setCalendar(res.data);
+      }
     }); 
   }, []);
 
@@ -83,15 +86,17 @@ function App({ _user }: { _user: User }) {
       method: 'GET',
       url: '/change-month/' + direction
     }).then((res: ApiResponse) => {
-      setUser({
-        ...user,
-        account: {
-          ...user.account,
-          month: res.user!.account.month,
-          year: res.user!.account.year
-        }
-      });
-      setCalendar(res.data);
+      if (res.success) {
+        setUser({
+          ...user,
+          account: {
+            ...user.account,
+            month: res.user!.account.month,
+            year: res.user!.account.year
+          }
+        });
+        setCalendar(res.data);
+      }
     });
   }, []);
 
@@ -156,7 +161,7 @@ function App({ _user }: { _user: User }) {
     </main>
     <Routes>
       <Route path="/" element={<></>} />
-      <Route path="/event/:id" element={<Event 
+      <Route path="/event/:id" element={<EventModal 
         origin={eventOrigin} 
         setEvent={setEvent}
         setCalendar={setCalendar} />} />

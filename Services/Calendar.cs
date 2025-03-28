@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using FinanceCalendar;
+using Microsoft.EntityFrameworkCore;
 
 namespace FinanceCalendar.Services
 {
@@ -14,15 +15,15 @@ namespace FinanceCalendar.Services
             _context = context;
         }
 
-        public List<List<Day>> GenerateCalendar(User user)
+        public async Task<List<List<Day>>> GenerateCalendar(User user)
         {
             DateTime currentMonth = new DateTime(user.Account.Year, user.Account.Month, 1);
             DateTime previousMonth = currentMonth.AddMonths(-1);
             DateTime nextMonth = currentMonth.AddMonths(2);
 
-            List<Event> events = _context.Events
+            List<Event> events = await _context.Events
                 .Where(e => e.UserId == user.Id && e.Date >= previousMonth && e.Date < nextMonth)
-                .ToList();
+                .ToListAsync();
 
             List<List<Day>> weeks = new List<List<Day>>();
             string[] DOW = { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday" };
@@ -88,22 +89,23 @@ namespace FinanceCalendar.Services
             return weeks;
         }
 
-        public void CalculateEventTotals(User user)
+        public async Task CalculateEventTotals(User user)
         {
-            List<Event> events = _context.Events
-                .Where(e => e.UserId == user.Id)
-                .OrderBy(e => e.Date)
-                .ToList();
+            List<Event> priorEvents = await _context.Events
+                .Where(e => e.UserId == user.Id && e.Date < DateTime.UtcNow.Date)
+                .ToListAsync();
 
-            foreach (var e in events)
+            foreach (var e in priorEvents)
             {
-                if (e.Date < DateTime.UtcNow.Date)
-                {
-                    e.Total = 0.0;
-                }
+                e.Total = 0.0;
             }
 
-            events = events.Where(e => e.Date >= DateTime.UtcNow.Date).ToList();
+            await _context.SaveChangesAsync();
+
+            List<Event> events = await _context.Events
+                .Where(e => e.UserId == user.Id && e.Date >= DateTime.UtcNow.Date)
+                .OrderBy(e => e.Date)
+                .ToListAsync();
 
             double runningTotal = user.CheckingBalance;
             if (events.Count > 0)
@@ -118,15 +120,15 @@ namespace FinanceCalendar.Services
                 }
             }
 
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
         }
 
-        public ServiceResponse<List<List<Day>>> RefreshCalendar(User user)
+        public async Task<ServiceResponse<List<List<Day>>>> RefreshCalendar(User user)
         {
-            user.Account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
+            user.Account.Expenses = await _context.Expenses.Where(e => e.UserId == user.Id).ToListAsync();
             try
             {
-                List<List<Day>> cal = GenerateEventsFromExpenses(user);
+                List<List<Day>> cal = await GenerateEventsFromExpenses(user);
                 return new ServiceResponse<List<List<Day>>>.Builder()
                     .success(true)
                     .data(cal)
@@ -164,16 +166,16 @@ namespace FinanceCalendar.Services
             return user;
         }
 
-        public ServiceResponse<List<List<Day>>> UpdateCheckingBalance(User user, double checkingBalance)
+        public async Task<ServiceResponse<List<List<Day>>>> UpdateCheckingBalance(User user, double checkingBalance)
         {
             user.CheckingBalance = checkingBalance;
-            _context.SaveChanges();
+            await _context.SaveChangesAsync();
 
-            CalculateEventTotals(user);
+            await CalculateEventTotals(user);
 
             try
             {
-                List<List<Day>> cal = GenerateEventsFromExpenses(user);
+                List<List<Day>> cal = await GenerateEventsFromExpenses(user);
                 return new ServiceResponse<List<List<Day>>>.Builder()
                     .success(true)
                     .data(cal)
@@ -189,10 +191,10 @@ namespace FinanceCalendar.Services
             }
         }
 
-        public List<List<Day>> GenerateEventsFromExpenses(User user)
+        public async Task<List<List<Day>>> GenerateEventsFromExpenses(User user)
         {
             List<Event> eventsToInsert = new();
-            List<Event> eventsToRemove = _context.Events.Where(e => e.UserId == user.Id).ToList();
+            List<Event> eventsToRemove = await _context.Events.Where(e => e.UserId == user.Id).ToListAsync();
 
             foreach (Expense expense in user.Account.Expenses)
             {
@@ -231,28 +233,28 @@ namespace FinanceCalendar.Services
                 }
             }
 
-            using var transaction = _context.Database.BeginTransaction();
+            await using var transaction = _context.Database.BeginTransaction();
 
             _context.RemoveRange(eventsToRemove);
-            _context.Events.AddRange(eventsToInsert);
-            _context.SaveChanges();
+            await _context.Events.AddRangeAsync(eventsToInsert);
+            await _context.SaveChangesAsync();
 
-            transaction.Commit();
+            await transaction.CommitAsync();
 
-            CalculateEventTotals(user);
+            await CalculateEventTotals(user);
 
-            return GenerateCalendar(user);
+            return await GenerateCalendar(user);
         }
 
-        public Expense AddExpense(User user)
+        public async Task<Expense> AddExpense(User user)
         {
             Expense expense = new() { UserId = user.Id, Id = Guid.NewGuid() };
-            _context.Expenses.Add(expense);
-            _context.SaveChanges();
+            await _context.Expenses.AddAsync(expense);
+            await _context.SaveChangesAsync();
             return expense;
         }
 
-        public ServiceResponse<object> DeleteExpense(User user, Guid expenseId)
+        public async Task<ServiceResponse<object>> DeleteExpense(User user, Guid expenseId)
         {
             var expense = _context.Expenses.FirstOrDefault(e => e.Id == expenseId);
             if (expense == null)
@@ -264,14 +266,14 @@ namespace FinanceCalendar.Services
             }
 
             _context.Expenses.Remove(expense);
-            _context.SaveChanges();
+            _context.SaveChangesAsync();
 
             return new ServiceResponse<object>.Builder()
                 .success(true)
                 .build();
         }
 
-        public ServiceResponse<object> UpdateExpense(User user, Expense expense)
+        public async Task<ServiceResponse<object>> UpdateExpense(User user, Expense expense)
         {
             Console.WriteLine("UpdateExpense");
             try
@@ -279,7 +281,7 @@ namespace FinanceCalendar.Services
                 var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
                 if (existingExpense == null)
                 {
-                    _context.Expenses.Add(expense);
+                    await _context.Expenses.AddAsync(expense);
                 }
                 else
                 {
@@ -296,7 +298,7 @@ namespace FinanceCalendar.Services
                     }
                 }
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
                 return new ServiceResponse<object>.Builder().success(true).build();
             }
@@ -309,44 +311,116 @@ namespace FinanceCalendar.Services
             }
         }
 
-        public ServiceResponse<Event> SaveEvent(User user, Event ev, bool all)
+        private async Task RecurEvent(Event ev)
+        {
+            var properties = typeof(Event).GetProperties();
+            DateTime startDate = ev.Date;
+            while (startDate <= ev.RecurrenceEndDate)
+            {
+                Event evt = _context.Events.FirstOrDefault(e => 
+                    e.RecurrenceId == ev.RecurrenceId 
+                    && e.Date.Date == startDate.Date
+                );
+                if (evt == null)
+                {
+                    evt = new Event();
+                    foreach (var prop in properties)
+                    {
+                        if (prop.Name == "Id") continue;
+
+                        var newValue = prop.GetValue(ev);
+
+                        if (prop.Name == "Date")
+                        {
+                            newValue = startDate;
+                        }
+
+                        prop.SetValue(evt, newValue);
+
+                        _context.Events.AddAsync(evt);
+                    }
+                }
+                else
+                {
+                    foreach (var prop in properties)
+                    {
+                        if (prop.Name == "Id") continue;
+                        if (prop.Name == "Date") continue;
+
+                        var newValue = prop.GetValue(ev);
+
+                        prop.SetValue(evt, newValue);
+                    }
+                }
+                switch (ev.Frequency)
+                {
+                    case "monthly":
+                        startDate = startDate.AddMonths(1);
+                        break;
+                    case "biweekly":
+                        startDate = startDate.AddDays(14);
+                        break;
+                    case "weekly":
+                        startDate = startDate.AddDays(7);
+                        break;
+                    default:
+                        startDate = startDate.AddDays(1);
+                        break;
+                }
+            }
+        }
+
+        public async Task<ServiceResponse<Event>> SaveEvent(User user, Event ev, bool all)
         {
             try
             {
                 var existingEvent =  _context.Events.FirstOrDefault(e => e.Id == ev.Id);
+
                 
                 if (existingEvent == null)
                 {
-                    _context.Events.Add(ev);
+                    if (all)
+                    {
+                        await RecurEvent(ev);
+                    }
+                    else
+                    {
+                        await _context.Events.AddAsync(ev);
+                    }
                 }
                 else
                 {
-                    var existingEvents = _context.Events
-                        .Where(e => all ? e.RecurrenceId == ev.RecurrenceId : e.Id == ev.Id)
-                        .ToList();
-
-                    TimeSpan dateDiff = ev.Date - existingEvent.Date;
-
-                    foreach (Event evt in existingEvents)
+                    var properties = typeof(Event).GetProperties();
+                    if (all)
                     {
-                        var properties = typeof(Event).GetProperties();
+                        await RecurEvent(ev);
+                    }
+                    else
+                    {
+                        bool didChangeDate = false;
+
+                        if (ev.Date != existingEvent.Date)
+                        {
+                            didChangeDate = true;
+                        }
+
                         foreach (var prop in properties)
                         {
                             if (prop.Name == "Id") continue;
 
                             var newValue = prop.GetValue(ev);
 
-                            if (all && prop.Name == "Date" && newValue is DateTime newDate)
-                            {
-                                newValue = evt.Date + dateDiff;
-                            }
+                            prop.SetValue(existingEvent, newValue);
+                        }
 
-                            prop.SetValue(evt, newValue);
+                        if (didChangeDate)
+                        {
+                            existingEvent.RecurrenceId = Guid.NewGuid();
                         }
                     }
                 }
 
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
 
                 return new ServiceResponse<Event>.Builder()
                     .success(true)
@@ -363,5 +437,52 @@ namespace FinanceCalendar.Services
                     .build();
             }
         }
+
+        public async Task<ServiceResponse<bool>> DeleteEvent(User user, Guid eventId, Guid recurrenceId)
+        {
+            try
+            {
+                if (recurrenceId != Guid.Empty)
+                {
+                    var events = await _context.Events
+                        .Where(e => e.RecurrenceId == recurrenceId)
+                        .ToListAsync();
+
+                    if (events.Any())
+                    {
+                        _context.Events.RemoveRange(events);
+                        await _context.SaveChangesAsync();
+                        return new ServiceResponse<bool>.Builder()
+                            .success(true)
+                            .build();
+                    }
+                }
+                else
+                {
+                    var ev = await _context.Events.FindAsync(eventId);
+                    if (ev != null)
+                    {
+                        _context.Events.Remove(ev);
+                        await _context.SaveChangesAsync();
+                        return new ServiceResponse<bool>.Builder()
+                            .success(true)
+                            .build();
+                    }
+                }
+
+                return new ServiceResponse<bool>.Builder()
+                    .success(false)
+                    .message("Event(s) not found.")
+                    .build();
+            }
+            catch (Exception ex)
+            {
+                return new ServiceResponse<bool>.Builder()
+                    .success(false)
+                    .message($"Error deleting event(s): {ex.Message}")
+                    .build();
+            }
+        }
+
     }
 }

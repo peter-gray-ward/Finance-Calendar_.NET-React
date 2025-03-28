@@ -15,7 +15,7 @@ export default function Expenses({ user, setUser, setCalendar }: {
       method: 'POST',
       url: '/add-expense'
     }).then((res: ApiResponse) => {
-      if (!res.error) {
+      if (res.success) {
         setUser({
           ...user,
           account: {
@@ -36,7 +36,7 @@ export default function Expenses({ user, setUser, setCalendar }: {
       method: 'POST',
       url: '/refresh-calendar'
     }).then((res: ApiResponse) => {
-      if (!res.error) {
+      if (res.success) {
         console.log('-- refreshCalendar', res);
         setCalendar(res.data as Day[][]);
         setRefreshingCalendar(false);
@@ -75,7 +75,7 @@ export default function Expenses({ user, setUser, setCalendar }: {
         url: '/update-expense',
         body: expense
       }).then((res: ApiResponse) => {
-        if (!res.error) {
+        if (res.success) {
           setSuccessfulUpdates(Array.from(new Set([
             ...successfulUpdates,
             (res.data as Expense).id
@@ -93,7 +93,7 @@ export default function Expenses({ user, setUser, setCalendar }: {
       method: 'DELETE',
       url: '/delete-expense/' + expenseId
     }).then((res: ApiResponse) => {
-      if (!res.error) {
+      if (res.success) {
         setUser({
           ...user,
           account: {

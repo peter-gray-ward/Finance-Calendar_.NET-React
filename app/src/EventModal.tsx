@@ -1,9 +1,9 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useLocation, useParams } from 'react-router-dom';
-import { IEvent, Position, User, ApiResponse, Day } from './types';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import { Event, IEvent, Position, User, ApiResponse, Day } from './types';
 import { xhr } from './util';
 
-export default function Event({ 
+export default function EventModal({ 
   origin, 
   setEvent,
   setCalendar
@@ -13,6 +13,7 @@ export default function Event({
   setCalendar: React.Dispatch<React.SetStateAction<Day[][]>>
 }) {
   const { id } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const { event, origin: initialOrigin, user } = location.state || {};
   const [saved, setSaved] = useState<boolean>(false);
@@ -67,10 +68,26 @@ export default function Event({
     });
   }, [localEvent]);
   const deleteThisEvent = useCallback(() => {
-
+    xhr({
+      method: 'DELETE',
+      url: '/delete-event?id=' + localEvent.id
+    }).then((res: ApiResponse) => {
+      if (res.success) {
+        setCalendar(res.data as Day[][]);
+        navigate("/");
+      }
+    });
   }, []);
   const deleteAllTheseEvents = useCallback(() => {
-
+    xhr({
+      method: 'DELETE',
+      url: '/delete-event?recurrenceId=' + localEvent.recurrenceId
+    }).then((res: ApiResponse) => {
+      if (res.success) {
+        setCalendar(res.data as Day[][]);
+        navigate("/");
+      }
+    });
   }, []);
 
   if (!origin.left && !origin.top) return null;

@@ -1,3 +1,5 @@
+import { v4 as uuidv4 } from 'uuid';
+
 export interface RequestOptions {
     url: string;
     method?: string;
@@ -58,6 +60,27 @@ export interface IEvent {
     exclude: boolean;
     frequency: string;
     userId: string;
+}
+
+export class Event {
+    id: string = uuidv4();
+    recurrenceId: string = uuidv4();
+    summary: string = '';
+    date: string;
+    recurrenceEndDate: string;
+    amount: number = 0.0;
+    total: number = 0.0;
+    balance: number = 0.0;
+    exclude: boolean = false;
+    frequency: string = 'monthly';
+    userId: string;
+
+    constructor(day: Day, userId: string) {
+        const date = `${day.year}-${day.month < 10 ? '0' : ''}${day.month}-${day.date < 10 ? '0' : ''}${day.date}`;
+        this.date = date;
+        this.recurrenceEndDate = date;
+        this.userId = userId;
+    }
 }
 
 export interface Position {

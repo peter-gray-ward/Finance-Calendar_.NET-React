@@ -154,7 +154,7 @@ namespace FinanceCalendar
         [Authorize]
         [HttpGet]
         [Route("get-calendar")]
-        public IActionResult GetCalendar()
+        public async Task<IActionResult> GetCalendar()
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
 
@@ -170,7 +170,7 @@ namespace FinanceCalendar
 
             User user = userRes.User;
 
-            List<List<Day>> cal = _calendar.GenerateCalendar(user);
+            List<List<Day>> cal = await _calendar.GenerateCalendar(user);
 
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
@@ -185,7 +185,7 @@ namespace FinanceCalendar
         [Authorize]
         [HttpGet]
         [Route("change-month/{direction}")]
-        public IActionResult UpdateMonth(int direction)
+        public async Task<IActionResult> UpdateMonth(int direction)
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
 
@@ -226,7 +226,7 @@ namespace FinanceCalendar
                 SameSite = SameSiteMode.Strict
             });
 
-            List<List<Day>> cal = _calendar.GenerateCalendar(user);
+            List<List<Day>> cal = await _calendar.GenerateCalendar(user);
 
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
@@ -241,11 +241,11 @@ namespace FinanceCalendar
         [Authorize]
         [HttpPost]
         [Route("add-expense")]
-        public IActionResult AddExpense()
+        public async Task<IActionResult> AddExpense()
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            Expense expense = _calendar.AddExpense(userRes.User);
+            Expense expense = await _calendar.AddExpense(userRes.User);
 
             userRes = _security.GetUser(Request);
 
@@ -262,11 +262,11 @@ namespace FinanceCalendar
         [Authorize]
         [HttpDelete]
         [Route("delete-expense/{expenseId}")]
-        public IActionResult DeleteExpense(Guid expenseId)
+        public async Task<IActionResult> DeleteExpense(Guid expenseId)
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            ServiceResponse<object> deleteExpense = _calendar.DeleteExpense(userRes.User, expenseId);
+            ServiceResponse<object> deleteExpense = await _calendar.DeleteExpense(userRes.User, expenseId);
 
             if (!deleteExpense.Success)
             {
@@ -292,11 +292,11 @@ namespace FinanceCalendar
         [Authorize]
         [HttpPut]
         [Route("update-expense")]
-        public IActionResult UpdateExpense([FromBody] Expense expense)
+        public async Task<IActionResult> UpdateExpense([FromBody] Expense expense)
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
 
-            ServiceResponse<object> update = _calendar.UpdateExpense(userRes.User, expense);
+            ServiceResponse<object> update = await _calendar.UpdateExpense(userRes.User, expense);
 
             if (!update.Success)
             {
@@ -320,11 +320,11 @@ namespace FinanceCalendar
         [Authorize]
         [HttpPost]
         [Route("refresh-calendar")]
-        public IActionResult RefreshCalendar()
+        public async Task<IActionResult> RefreshCalendar()
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
             
-            ServiceResponse<List<List<Day>>> cal = _calendar.RefreshCalendar(userRes.User);
+            ServiceResponse<List<List<Day>>> cal = await _calendar.RefreshCalendar(userRes.User);
 
             if (!cal.Success)
             {
@@ -349,11 +349,11 @@ namespace FinanceCalendar
         [Authorize]
         [HttpPost]
         [Route("update-checking-balance")]
-        public IActionResult UpdateCheckingBalance([FromBody] double checkingBalance)
+        public async Task<IActionResult> UpdateCheckingBalance([FromBody] double checkingBalance)
         {
             ServiceResponse<object> userRes = _security.GetUser(Request);
             
-            ServiceResponse<List<List<Day>>> newCal = _calendar.UpdateCheckingBalance(userRes.User, checkingBalance);
+            ServiceResponse<List<List<Day>>> newCal = await _calendar.UpdateCheckingBalance(userRes.User, checkingBalance);
 
             if (!newCal.Success)
             {
@@ -378,7 +378,7 @@ namespace FinanceCalendar
         [Authorize]
         [HttpPut]
         [Route("save-event")]
-        public IActionResult SaveThisEvent([FromBody] Event ev, [FromQuery] bool all = false)
+        public async Task<IActionResult> SaveThisEvent([FromBody] Event ev, [FromQuery] bool all = false)
         {
             var userRes = _security.GetUser(Request);
             User user = userRes.User;
@@ -392,7 +392,7 @@ namespace FinanceCalendar
                         .build()
                 ); 
             }
-            ServiceResponse<Event> savedEvent = _calendar.SaveEvent(user, ev, all);
+            ServiceResponse<Event> savedEvent = await _calendar.SaveEvent(user, ev, all);
             if (!savedEvent.Success)
             {
                 return StatusCode(500,
@@ -403,13 +403,39 @@ namespace FinanceCalendar
                         .build()
                 ); 
             }
-            var cal = _calendar.GenerateCalendar(user);
+            var cal = await _calendar.GenerateCalendar(user);
             return Ok(
                 new ApiResponse<List<List<Day>>>.Builder()
                     .success(true)
                     .data(cal)
                     .build()
             );
-        }  
+        }
+
+        [Authorize]
+        [HttpDelete]
+        [Route("delete-event")]
+        public async Task<IActionResult> DeleteEvent([FromQuery] Guid id, [FromQuery] Guid recurrenceId)
+        {
+            var userRes = _security.GetUser(Request);
+            User user = userRes.User;
+            ServiceResponse<bool> deletion = await _calendar.DeleteEvent(user, id, recurrenceId);
+            if (!deletion.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<bool>.Builder()
+                        .success(false)
+                        .message(deletion.Message)
+                        .build()
+                ); 
+            }
+            var cal = await _calendar.GenerateCalendar(user);
+            return Ok(
+                new ApiResponse<List<List<Day>>>.Builder()
+                    .success(true)
+                    .data(cal)
+                    .build()
+            );
+        }
     }
 }

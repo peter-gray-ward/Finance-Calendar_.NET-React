@@ -39,5 +39,8 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:5156"
+  "proxy": "http://localhost:5156",
+  "devDependencies": {
+    "@types/uuid": "^10.0.0"
+  }
 }

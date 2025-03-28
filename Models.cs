@@ -137,7 +137,7 @@ namespace FinanceCalendar
     public record ApiResponse<T>
     {
         public bool Success { get; set; } = false;
-        public string? Message { get; init; }
+        public string Message { get; init; } = "";
         public T? Data { get; init; }
         public User? User { get; init; }
 
