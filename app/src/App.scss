@@ -6,7 +6,7 @@ html {
   --modal-height: 200px;
   --modal-label-font-size: 1.15rem;
   --modal-font-size: 1rem;
-  --panel-transition-speed: 0.05s;
+  --panel-transition-speed: 0.1s;
   --background: #171a17;
   --color: whitesmoke;
 }
@@ -27,13 +27,36 @@ html {
 body {
   width: 100vw;
   height: 100vh;
+  position: relative;
   &.view-left {
     header {
       z-index: 2;
-      width: 100% !important;
+      width: 50% !important;
+    }
+    footer {
+      z-index: 0;
     }
     main {
-      width: 0% !important;
+      width: 50% !important;
+      #calendar-week-header { 
+        > div {
+          color: transparent;
+        }
+      }
+    }
+  }
+  &.view-right {
+    header {
+      z-index: 0;
+    }
+    footer {
+      z-index: 2;
+      background: #EBEDEF;
+      float: right;
+      width: 50% !important;
+    }
+    main {
+      width: 50% !important;
       #calendar-week-header { 
         > div {
           color: transparent;
@@ -148,16 +171,8 @@ body {
 }
 
 #left {
-  backdrop-filter: blur(10px);
-  z-index: 0;
   position: absolute;
-  left: 0;
-  width: 0%;
-  height: 100%;
-  box-sizing: border-box;
-  padding: 0.5rem;
-  flex-direction: column;
-  overflow: auto;;
+  backdrop-filter: blur(10px);
   background: url(/wallpaper01.webp);
   h2 {
     div {
@@ -233,11 +248,83 @@ body {
       }
     }
   }
+  > * {
+    margin: 0.5rem;
+  }
+}
+
+.today {
+  background: maroon !important;
+  color: white;
+  border-radius: 100%;
+}
+
+#right {
+  position: relative;
+  #outlook {
+    display: flex;
+    flex-direction: column;
+    .mini-month-row {
+      display: flex;
+      justify-content: space-between;
+      .mini-month {
+        width: calc(100vw / 2 / 3);
+        height: calc(100vw / 2 / 3);
+        @media (max-width: 950px) {
+          width: calc(100vw / 4);
+          height: calc(100vw / 4);
+        }
+        box-sizing: border-box;
+        background: white;
+        margin: 0.1rem;
+        h2 {
+          color: red;
+          font-family: system-ui;
+          font-weight: 200;
+          margin: none;
+          padding: 0.15rem 0.25rem;
+        }
+        .row {
+          width: 100%;
+          display: flex;
+          justify-content: space-around;
+          span {
+            font-size: 0.5rem;
+            padding: 0.1rem;
+          }
+          .dow {
+            padding: 0.1rem;
+            color: gray;
+          }
+        }
+      }
+    }
+  }
+}
+
+#left, #right {
+  box-sizing: border-box;
+  padding: 0;
+  z-index: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  box-sizing: border-box;
+  flex-direction: column;
+  overflow: auto;
+  transition: var(--panel-transition-speed) linear all;
 }
 
 #expand-to-budget {
   position: absolute;
   left: 5px;
+  top: calc(100% - 26px);
+  z-index: 100;
+}
+
+#expand-to-outlook {
+  position: absolute;
+  left: calc(100vw - 2rem);
   top: calc(100% - 26px);
   z-index: 100;
 }
@@ -352,13 +439,9 @@ main#main {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(0,0,0,0.0);
+            background: rgb(255,255,255,1);
             border-radius: 100%;
             user-select: none;
-            &.today {
-              background: maroon;
-              color: white;
-            }
           }
           .total {
             display: flex;

@@ -10,18 +10,21 @@ import Debts from './Debts';
 import EventModal from './EventModal';
 import DayBlock from './DayBlock';
 import Navigation from './Navigation';
+import Outlook from './Outlook';
 
 function App({ _user }: { _user: User }) {
   const [user, setUser] = useState(_user);
   const [viewModal, setViewModal] = useState({
     event: false
   });
+  const [windowWidth, setWindowWidth] = useState<number>(window.innerWidth);
   const [eventOrigin, setEventOrigin] = useState<Position>({ top: 0, left: 0 } as Position);
   const [event, setEvent] = useState<IEvent | null>(null);
   const [calendar, setCalendar] = useState<Day[][]>([]);
   const eventOriginRef = useRef<HTMLElement | null>(null);
 
   const handleResize = () => {
+    setWindowWidth(window.innerWidth);
     if (event) {
       const calendarEvent = document.getElementById(`event-${event.id}`);
       if (calendarEvent) {
@@ -33,7 +36,6 @@ function App({ _user }: { _user: User }) {
       }
     }
   };
-
 
   useEffect(() => {
     if (event) {
@@ -159,6 +161,9 @@ function App({ _user }: { _user: User }) {
         }
       </div>
     </main>
+    <footer id="right">
+      <Outlook calendar={calendar} user={user} innerWidth={windowWidth} />
+    </footer>
     <Routes>
       <Route path="/" element={<></>} />
       <Route path="/event/:id" element={<EventModal 

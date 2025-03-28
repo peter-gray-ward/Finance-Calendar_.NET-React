@@ -33,6 +33,8 @@ namespace FinanceCalendar.Services
 
             startDate = startDate.AddDays(-(int)startDate.DayOfWeek);
 
+            DateTime yearFromStart = startDate.AddDays(365);
+
             var timeZoneId = user.TimeZone ?? "UTC";
 
             TimeZoneInfo userTimeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
@@ -41,7 +43,7 @@ namespace FinanceCalendar.Services
 
             List<Day> currentWeek = new List<Day>();
 
-            while (weeks.Count < 6 || startDate.Month == user.Account.Month)
+            while (startDate.Date < yearFromStart.Date)
             {
                 int dayOfMonth = startDate.Day;
                 int dayOfWeekIndex = (int)startDate.DayOfWeek; // Sunday = 0, Monday = 1, etc.

@@ -202,9 +202,6 @@ namespace FinanceCalendar
             User user = userRes.User;
 
             user = _calendar.ChangeMonth(user, direction);
-
-            Console.WriteLine(user.Account.Month);
-
             string token = Request.Cookies["finance-calendar-jwt"];
 
             ServiceResponse<string> tokenUpdate = _security.UpdateToken(token, user.Account);
