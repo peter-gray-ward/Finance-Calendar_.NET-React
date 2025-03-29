@@ -66,7 +66,10 @@ export default function DayBlock(
     }, 888);
   }, []);
 
-	return <div className="day-block" key={`${a}.${b}`} onClick={blurEvent} onDoubleClick={addEvent}>
+	return <div className={`day-block
+    ${day.month !== user.account.month ? ' opaque' : ''}
+    ${(day.dow == 0 || day.dow == 6 ? ' weekend' : '')}
+  `} key={`${a}.${b}`} onClick={blurEvent} onDoubleClick={addEvent}>
     <div className="day-header">
       {
         day.isTodayOrLater ?
@@ -77,7 +80,7 @@ export default function DayBlock(
                 onChange={updateCheckingBalance}
                 ref={checkingBalanceRef}
                 id="checking-balance"/> : (
-                  day.events.length ? day.total : null
+                  day.events.length ? day.total.toFixed(0) : null
                 )
               }
           </div>

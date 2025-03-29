@@ -85,6 +85,7 @@ namespace FinanceCalendar
         public bool IsTodayOrLater { get; set; } = false;
         public bool IsToday { get; set; } = false;
         public double Total { get; set; } = 0.0;
+        public int DOW { get; set; } = 0;
     }
 
     public record ServiceResponse<T> 

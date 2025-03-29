@@ -46,6 +46,7 @@ export interface Day {
     isTodayOrLater: boolean;
     isToday: boolean;
     total: number;
+    dow: number;
 }
 
 export interface IEvent {

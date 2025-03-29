@@ -58,7 +58,8 @@ namespace FinanceCalendar.Services
                     Year = startDate.Year,
                     Month = startDate.Month,
                     IsToday = isToday,
-                    IsTodayOrLater = isAfterToday
+                    IsTodayOrLater = isAfterToday,
+                    DOW = dayOfWeekIndex
                 };
 
                 List<Event> dayEvents = new List<Event>();

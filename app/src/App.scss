@@ -38,11 +38,6 @@ body {
     }
     main {
       width: 50% !important;
-      #calendar-week-header { 
-        > div {
-          color: transparent;
-        }
-      }
     }
   }
   &.view-right {
@@ -57,11 +52,6 @@ body {
     }
     main {
       width: 50% !important;
-      #calendar-week-header { 
-        > div {
-          color: transparent;
-        }
-      }
     }
   }
   #root {
@@ -261,6 +251,7 @@ body {
 
 #right {
   position: relative;
+  background: white;
   #outlook {
     display: flex;
     flex-direction: column;
@@ -276,8 +267,9 @@ body {
         }
         box-sizing: border-box;
         background: white;
-        margin: 0.1rem;
+        margin: 0rem 0.5rem;
         h2 {
+          font-size: 1rem;
           color: red;
           font-family: system-ui;
           font-weight: 200;
@@ -291,6 +283,8 @@ body {
           span {
             font-size: 0.5rem;
             padding: 0.1rem;
+            width: 0.75rem;
+            height: 0.75rem;
           }
           .dow {
             padding: 0.1rem;
@@ -425,6 +419,24 @@ main#main {
         background: white;
         float: left;
         overflow-x: hidden;
+        &.opaque {
+          .day-date {
+            color: lightgray !important;
+          }
+        }
+        &.weekend {
+          opacity: 0.75;
+          background: rgba(255,253,251,1);
+          .day-header {
+            .day-date {
+              color: gray;
+              background: transparent;
+              &.today {
+                color: white;
+              }
+            }
+          }
+        }
         .day-header {
           height: 25%;
           width: 100%;
@@ -442,6 +454,7 @@ main#main {
             background: rgb(255,255,255,1);
             border-radius: 100%;
             user-select: none;
+            font-family: system-ui;
           }
           .total {
             display: flex;
@@ -461,6 +474,10 @@ main#main {
               text-align: center;
               font-weight: 700;
               display: flex;
+              font-size: 1.5rem;
+              &:focus {
+                outline: none;
+              }
             }
           }
         }
