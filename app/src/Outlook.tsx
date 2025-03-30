@@ -11,33 +11,33 @@ export default function Outlook(
     user: User,
     innerWidth: number
   }) {
-	const allMonths = useMemo(() => {
-    const result: Day[][][] = [];
+
+	const groupedMonths: Day[][][][] = useMemo(() => {
+    const result: Day[][][][] = [];
+
+    let allMonths: Day[][][] = [];
+    let group: Day[][][] = [];
+    const groupSize = innerWidth < 950 ? 2 : 3;
+    let groupIndex = 0;
+
     calendar.forEach((week: Day[]) => {
       let monthsAccounted = new Set();
       for (let day of week) {
         if ((day.year >= user.account.year && day.month >= user.account.month) || (day.year > user.account.year)) {
           if (!monthsAccounted.has(day.month)) {  
-            if (!result[day.month]) {
-              result[day.month] = [];
+            if (!allMonths[day.month]) {
+              allMonths[day.month] = [];
             }
-            result[day.month].push(week);
+            allMonths[day.month].push(week);
             monthsAccounted.add(day.month);
           }
         }
       }
     });
-    return result.sort((monthA: Day[][], monthB: Day[][]) => {
+    
+    allMonths.sort((monthA: Day[][], monthB: Day[][]) => {
       return monthA[2][1].year - monthB[2][1].year;
-    });
-  }, [calendar, innerWidth, user]);
-
-  const groupedMonths: Day[][][][] = useMemo(() => {
-    const result: Day[][][][] = [];
-    let group: Day[][][] = [];
-    const groupSize = innerWidth < 950 ? 2 : 3;
-    let groupIndex = 0;
-    allMonths.forEach((month, monthIndex) => {
+    }).forEach((month, monthIndex) => {
       if (!month) return;
 
       group[monthIndex] = month;
@@ -49,8 +49,7 @@ export default function Outlook(
       }
     });
     return result;
-  }, [allMonths, innerWidth, user]);
-
+  }, [calendar, innerWidth, user]);
 
 
 	return <section id="outlook">

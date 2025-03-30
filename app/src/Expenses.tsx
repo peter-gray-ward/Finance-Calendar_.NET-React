@@ -110,7 +110,7 @@ export default function Expenses({ user, setUser, setCalendar }: {
         <div>Regular Expenses</div>
       </h2>
       <div className="table" id="expenses">
-        <div className="tr">
+        <div className="tr header">
           <div className="th">Expense</div>
           <div className="th">Frequency</div>
           <div className="th">Amount</div>
@@ -120,7 +120,7 @@ export default function Expenses({ user, setUser, setCalendar }: {
         {
           user.account.expenses.map((expense: Expense) => (
             <div className={`tr data id expenses${successfulUpdates.includes(expense.id) ? ' updated' : ''}`} id={ expense.id } key={expense.id}>
-              <input disabled name="id" className="hidden" value={expense.id} />  
+             
 
               <input name="name" className="td" type="text" value={expense.name} onChange={updateExpense} />
               
@@ -141,6 +141,8 @@ export default function Expenses({ user, setUser, setCalendar }: {
               <input name="startDate" className="td" type="date" value={expense.startDate.split('T')[0]} onChange={updateExpense} />
               
               <input name="recurrenceEndDate" className="td" type="date" value={expense.recurrenceEndDate.split('T')[0]} onChange={updateExpense} />
+
+              <input disabled name="id" className="hidden" value={expense.id} />  
 
               <button className="delete-expense" onClick={() => deleteExpense(expense.id)}>-</button>
             </div>

@@ -176,8 +176,12 @@ body {
   }
   .tr {
     width: 100%;
+    &.header {
+      width: calc(100% - 1rem);
+      background: black;
+    }
     display: flex;
-    background: black;
+    background: transparent;
     color: white;
 
     &.updated {
@@ -187,7 +191,7 @@ body {
 
     .th {
       font-family: Andale Mono;
-      background: black;
+      background: transparent;
       color: white;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -195,29 +199,45 @@ body {
       box-sizing: border-box;
     }
 
-    .th:nth-of-type(1),
-    .td:nth-of-type(1) {
-      width: 40%;
+    .th:nth-child(1),
+    .td:nth-child(1) {
+      width: 30%;
     }
 
-    .th:nth-of-type(2),
-    .td:nth-of-type(2) {
+    .th:nth-child(2),
+    .td:nth-child(2) {
+      width: 17%;
+    }
+
+    .th:nth-child(3),
+    .td:nth-child(3) {
       width: 15%;
     }
 
-    .th:nth-of-type(3),
-    .td:nth-of-type(3) {
-      width: 15%;
+    .th:nth-child(4),
+    .td:nth-child(4) {
+      width: 19%;
     }
 
-    .th:nth-of-type(4),
-    .td:nth-of-type(4) {
-      width: 15%;
+    .th:nth-child(5),
+    .td:nth-child(5) {
+      width: 19%;
     }
 
-    .th:nth-of-type(5),
-    .td:nth-of-type(5) {
-      width: 15%;
+    .td {
+      select {
+        height: 100%;
+        appearance: initial;
+        padding: 0.15rem;
+        &:focus {
+          outline: none;
+        }
+      }
+    }
+
+    .delete-expense {
+      font-size: 1rem;
+      @extend .table-button;
     }
 
     &.button-row-right {
@@ -225,12 +245,8 @@ body {
       justify-content: flex-end;
       background: transparent;
       button {
-        border: none;
-        background: none;
+        @extend .table-button;
         font-size: 1.5rem;
-        font-weight: 100;
-        font-family: system-ui;
-        color: whitesmoke;
 
         &.refreshing {
           animation: rotate 1s linear infinite;
@@ -240,6 +256,18 @@ body {
   }
   > * {
     margin: 0.5rem;
+  }
+}
+
+.table-button {
+  border: none;
+  font-weight: 100;
+  font-family: system-ui;
+  color: whitesmoke;
+  background: transparent;
+  &:hover {
+    cursor: pointer;
+    font-weight: 800;
   }
 }
 
