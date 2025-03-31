@@ -19,7 +19,7 @@ namespace FinanceCalendar.Services
         {
             DateTime currentMonth = new DateTime(user.Account.Year, user.Account.Month, 1);
             DateTime previousMonth = currentMonth.AddMonths(-1);
-            DateTime nextMonth = currentMonth.AddMonths(2);
+            DateTime nextMonth = currentMonth.AddMonths(13);
 
             List<Event> events = await _context.Events
                 .Where(e => e.UserId == user.Id && e.Date >= previousMonth && e.Date < nextMonth)

@@ -259,24 +259,6 @@ body {
   }
 }
 
-.table-button {
-  border: none;
-  font-weight: 100;
-  font-family: system-ui;
-  color: whitesmoke;
-  background: transparent;
-  &:hover {
-    cursor: pointer;
-    font-weight: 800;
-  }
-}
-
-.today {
-  background: maroon !important;
-  color: white;
-  border-radius: 100%;
-}
-
 #right {
   position: relative;
   background: white;
@@ -287,21 +269,23 @@ body {
       display: flex;
       justify-content: space-between;
       .mini-month {
+        display: flex;
+        flex-direction: column;
         width: calc(100vw / 2 / 3);
-        height: calc(100vw / 2 / 3);
+        height: 11rem;
         @media (max-width: 950px) {
-          width: calc(100vw / 4);
-          height: calc(100vw / 4);
+          width: 25vh;
+          height: 25vh;
         }
         box-sizing: border-box;
         background: white;
         margin: 0rem 0.5rem;
         h2 {
           font-size: 1rem;
-          color: red;
+          color: darkslategrey;
           font-family: system-ui;
           font-weight: 200;
-          margin: none;
+          margin: 0.5rem 0 0.25rem 0;
           padding: 0.15rem 0.25rem;
         }
         .row {
@@ -318,6 +302,32 @@ body {
             padding: 0.1rem;
             color: gray;
           }
+        }
+        .weeks {
+          flex-grow: 1;
+          max-height: 6rem;
+          .day-date {
+            border-radius: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            &.opaque {
+              color: lightgray !important;
+            }
+            &:hover {
+              cursor: pointer;
+              background: rgba(0,0,0,0.1);
+            }
+          }
+        }
+        .info-footer {
+          width: 100%;
+          box-sizing: border-box;
+          padding: 0.1rem;
+          height: 2rem;
+          display: flex;
+          align-items: center;
+          justify-content: end;
         }
       }
     }
@@ -540,6 +550,24 @@ main#main {
       }
     }
   }
+}
+
+.table-button {
+  border: none;
+  font-weight: 100;
+  font-family: system-ui;
+  color: whitesmoke;
+  background: transparent;
+  &:hover {
+    cursor: pointer;
+    font-weight: 800;
+  }
+}
+
+.today {
+  background: maroon !important;
+  color: white;
+  border-radius: 100%;
 }
 
 .positive {

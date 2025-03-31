@@ -1,4 +1,4 @@
-import { RequestOptions, ApiResponse } from './types';
+import { RequestOptions, ApiResponse, Day, IEvent, User } from './types';
 import { jwtDecode } from 'jwt-decode';
 
 export const xhr = async (options: RequestOptions): Promise<any> => {
@@ -56,3 +56,20 @@ export const serializeRow = <T>(tr: HTMLElement, cls: new () => T, additionalPro
 
     return result;
 };
+
+export const findLastEventOfMonth = (monthIndex: number, month: Day[][], user: User): IEvent => {
+    const today = new Date();
+    for (let i = month.length - 1; i >= 0; i--) {
+        for (let j = month[i].length - 1; j >= 0; j--) {
+            let day: Day = month[i][j] as Day;
+            if (day.month == monthIndex) {
+                if (today.getFullYear() == day.year && day.month - 1 == today.getMonth() && day.date == today.getDate()) {
+                    return { total: user.checkingBalance } as IEvent;
+                } if (day.events.length) {
+                    return day.events[day.events.length - 1] as IEvent;
+                }
+            }
+        }
+    }
+    return {} as IEvent;
+}
