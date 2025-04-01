@@ -28,7 +28,7 @@ body {
   width: 100vw;
   height: 100vh;
   position: relative;
-  &.view-left {
+  &.view-left-main {
     header {
       z-index: 2;
       width: 50% !important;
@@ -40,7 +40,29 @@ body {
       width: 50% !important;
     }
   }
-  &.view-right {
+  &.view-left-right {
+    main {
+      z-index: 0;
+      width: 0% !important;
+      #calendar-month-header {
+        padding: 0 !important;
+      }
+      #calendar-month-header > div:first-of-type, #calendar-week-header, #month-name, #year-name {
+        display: none !important;
+      }
+    }
+    header {
+      z-index: 2;
+      width: 50% !important;
+    }
+    footer {
+      z-index: 2;
+      background: #EBEDEF;
+      float: right;
+      width: 50% !important;
+    }
+  }
+  &.view-right-main {
     header {
       z-index: 0;
     }
@@ -262,6 +284,7 @@ body {
 #right {
   position: relative;
   background: white;
+  padding-top: 2rem !important;
   #outlook {
     display: flex;
     flex-direction: column;
@@ -387,6 +410,13 @@ main#main {
 
     > div {
       display: flex;
+    }
+
+    div:last-of-type {
+      position: absolute;
+      left: 93%;
+      z-index: 3;
+      top: 1.5% !important;
     }
 
     #prev-month, #go-to-today, #next-month, #expand, #simple {

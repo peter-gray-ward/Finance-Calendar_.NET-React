@@ -17,11 +17,16 @@ export default function Navigation({ setEvent }: { setEvent: React.Dispatch<Reac
     const body = document.body;
     const header = document.querySelector('header');
 
-    if (!body.classList.contains('view-left')) {
-      body.classList.remove('view-right');
-      body.classList.add('view-left');
+    if (body.classList.contains('view-left-right')) {
+       body.classList.remove('view-left-right');
+    } else if (body.classList.contains('view-right-main')) {
+      body.classList.add('view-left-right');
+      body.classList.remove('view-right-main');
+    } else if (body.classList.contains('view-left-main')) {
+      body.classList.remove('view-left-main')
     } else {
-      body.classList.remove('view-left');
+      body.classList.remove('view-right-main');
+      body.classList.add('view-left-main');
     }
 
     
@@ -38,11 +43,16 @@ export default function Navigation({ setEvent }: { setEvent: React.Dispatch<Reac
     const body = document.body;
     const header = document.querySelector('header');
 
-    if (!body.classList.contains('view-right')) {
-      body.classList.remove('view-left');
-      body.classList.add('view-right');
+    if (body.classList.contains('view-left-right')) {
+       body.classList.remove('view-left-right');
+    } else if (body.classList.contains('view-left-main')) {
+      body.classList.add('view-left-right');
+      body.classList.remove('view-left-main');
+    } else if (body.classList.contains('view-right-main')) {
+      body.classList.remove('view-right-main');
     } else {
-      body.classList.remove('view-right');
+      body.classList.remove('view-left-main');
+      body.classList.add('view-right-main');
     }
   }, []);
 	return <>
