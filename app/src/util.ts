@@ -36,7 +36,7 @@ export const capitalizeKeys = (obj: any): any => {
     return obj;
 };
 
-export const serializeRow = <T>(tr: HTMLElement, cls: new () => T, additionalProperties: T): T => {
+export const serializeRow = <T>(tr: HTMLElement, cls: new () => T, additionalProperties: any): T => {
     const instance = new cls();
     const keys = Object.keys(instance as {}) as (keyof T)[];
     const additionalPropertyKeys = Object.keys(additionalProperties as {}) as (keyof T)[];

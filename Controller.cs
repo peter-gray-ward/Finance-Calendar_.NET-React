@@ -25,7 +25,7 @@ namespace FinanceCalendar
 
         [HttpPost]
         [Route("register-user")]
-        public IActionResult RegisterUser([FromBody] User user)
+        public async Task<IActionResult> RegisterUser([FromBody] User user)
         {
             if (user == null || string.IsNullOrEmpty(user.UserName) || string.IsNullOrEmpty(user.Password))
             {
@@ -37,7 +37,7 @@ namespace FinanceCalendar
                 );
             }
 
-            ServiceResponse<string> registration = _security.RegisterUser(user);
+            var registration = await _security.RegisterUser(user);
 
             if (!registration.Success)
             {
@@ -67,7 +67,7 @@ namespace FinanceCalendar
 
         [HttpPost]
         [Route("login-user")]
-        public IActionResult LoginUser([FromBody] User user)
+        public async Task<IActionResult> LoginUser([FromBody] User user)
         {
             if (user == null || string.IsNullOrEmpty(user.UserName) || string.IsNullOrEmpty(user.Password))
             {
@@ -79,7 +79,7 @@ namespace FinanceCalendar
                 );
             }
 
-            ServiceResponse<string> login = _security.LoginUser(user);
+            var login = await _security.LoginUser(user);
 
             if (!login.Success)
             {
@@ -90,13 +90,14 @@ namespace FinanceCalendar
                         .build()
                 );
             }
-            
+
             Response.Cookies.Append("finance-calendar-jwt", login.Data, new CookieOptions
             {
                 HttpOnly = true,
                 Secure = false,
                 SameSite = SameSiteMode.Lax
             });
+
             return Ok(
                 new ApiResponse<User>.Builder()
                     .success(true)
@@ -109,9 +110,9 @@ namespace FinanceCalendar
         [Authorize]
         [HttpGet]
         [Route("get-user")]
-        public IActionResult GetUser()
-        {  
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+        public async Task<IActionResult> GetUser()
+        {
+            var userRes = await _security.GetUser(Request);
 
             if (!userRes.Success)
             {
@@ -156,7 +157,7 @@ namespace FinanceCalendar
         [Route("get-calendar")]
         public async Task<IActionResult> GetCalendar()
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+            ServiceResponse<object> userRes = await _security.GetUser(Request);
 
             if (!userRes.Success)
             {
@@ -187,7 +188,7 @@ namespace FinanceCalendar
         [Route("change-month/{direction}")]
         public async Task<IActionResult> UpdateMonth(int direction)
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+            ServiceResponse<object> userRes = await _security.GetUser(Request);
 
             if (!userRes.Success)
             {
@@ -204,7 +205,7 @@ namespace FinanceCalendar
             user = _calendar.ChangeMonth(user, direction);
             string token = Request.Cookies["finance-calendar-jwt"];
 
-            ServiceResponse<string> tokenUpdate = _security.UpdateToken(token, user.Account);
+            ServiceResponse<string> tokenUpdate = await _security.UpdateToken(token, user.Account);
 
             if (!tokenUpdate.Success)
             {
@@ -240,11 +241,11 @@ namespace FinanceCalendar
         [Route("add-expense")]
         public async Task<IActionResult> AddExpense()
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+            ServiceResponse<object> userRes = await _security.GetUser(Request);
 
             Expense expense = await _calendar.AddExpense(userRes.User);
 
-            userRes = _security.GetUser(Request);
+            userRes = await _security.GetUser(Request);
 
             return Ok(
                 new ApiResponse<Expense>.Builder()
@@ -257,13 +258,44 @@ namespace FinanceCalendar
         }
 
         [Authorize]
+        [HttpPost]
+        [Route("add-debt")]
+        public async Task<IActionResult> AddDebt()
+        {
+            ServiceResponse<object> userRes = await _security.GetUser(Request);
+
+            Debt debt = await _calendar.AddDebt(userRes.User);
+
+            userRes = await _security.GetUser(Request);
+
+            return Ok(
+                new ApiResponse<Debt>.Builder()
+                    .success(true)
+                    .message("Debt added successfully.")
+                    .user(userRes.User)
+                    .data(debt)
+                    .build()
+            );
+        }
+
+        [Authorize]
         [HttpDelete]
         [Route("delete-expense/{expenseId}")]
         public async Task<IActionResult> DeleteExpense(Guid expenseId)
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+            var userRes = await _security.GetUser(Request);
 
-            ServiceResponse<object> deleteExpense = await _calendar.DeleteExpense(userRes.User, expenseId);
+            if (!userRes.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
+            }
+
+            var deleteExpense = await _calendar.DeleteExpense(userRes.User, expenseId);
 
             if (!deleteExpense.Success)
             {
@@ -275,13 +307,51 @@ namespace FinanceCalendar
                 );
             }
 
-            userRes = _security.GetUser(Request);
+            return Ok(
+                new ApiResponse<object>.Builder()
+                    .success(true)
+                    .data(expenseId)
+                    .user(userRes.User)
+                    .message("Expense deleted successfully.")
+                    .build()
+            );
+        }
+
+        [Authorize]
+        [HttpDelete]
+        [Route("delete-debt/{debtId}")]
+        public async Task<IActionResult> DeleteDebt(Guid debtId)
+        {
+            var userRes = await _security.GetUser(Request);
+
+            if (!userRes.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
+            }
+
+            var deleteDebt = await _calendar.DeleteDebt(userRes.User, debtId);
+
+            if (!deleteDebt.Success)
+            {
+                return NotFound(
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(deleteDebt.Message)
+                        .build()
+                );
+            }
 
             return Ok(
                 new ApiResponse<object>.Builder()
                     .success(true)
+                    .data(debtId)
                     .user(userRes.User)
-                    .message("Expense deleted successfully.")
+                    .message("Debt deleted successfully.")
                     .build()
             );
         }
@@ -291,9 +361,19 @@ namespace FinanceCalendar
         [Route("update-expense")]
         public async Task<IActionResult> UpdateExpense([FromBody] Expense expense)
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+            var userRes = await _security.GetUser(Request);
 
-            ServiceResponse<object> update = await _calendar.UpdateExpense(userRes.User, expense);
+            if (!userRes.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
+            }
+
+            var update = await _calendar.UpdateExpense(userRes.User, expense);
 
             if (!update.Success)
             {
@@ -315,13 +395,61 @@ namespace FinanceCalendar
         }
 
         [Authorize]
+        [HttpPut]
+        [Route("update-debt")]
+        public async Task<IActionResult> UpdateDebt([FromBody] Debt debt)
+        {
+            var userRes = await _security.GetUser(Request);
+
+            if (!userRes.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
+            }
+
+            var update = await _calendar.UpdateDebt(userRes.User, debt);
+
+            if (!update.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(update.Message)
+                        .build()
+                );
+            }
+
+            return Ok(
+                new ApiResponse<Debt>.Builder()
+                    .success(true)
+                    .message("Debt successfully updated")
+                    .data(debt)
+                    .build()
+            );
+        }
+
+        [Authorize]
         [HttpPost]
         [Route("refresh-calendar")]
         public async Task<IActionResult> RefreshCalendar()
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
-            
-            ServiceResponse<List<List<Day>>> cal = await _calendar.RefreshCalendar(userRes.User);
+            var userRes = await _security.GetUser(Request);
+
+            if (!userRes.Success)
+            {
+                return StatusCode(500,
+                    new ApiResponse<object>.Builder()
+                        .success(false)
+                        .message(userRes.Message)
+                        .build()
+                );
+            }
+
+            var cal = await _calendar.RefreshCalendar(userRes.User);
 
             if (!cal.Success)
             {
@@ -348,7 +476,7 @@ namespace FinanceCalendar
         [Route("update-checking-balance")]
         public async Task<IActionResult> UpdateCheckingBalance([FromBody] double checkingBalance)
         {
-            ServiceResponse<object> userRes = _security.GetUser(Request);
+            ServiceResponse<object> userRes = await _security.GetUser(Request);
             
             ServiceResponse<List<List<Day>>> newCal = await _calendar.UpdateCheckingBalance(userRes.User, checkingBalance);
 
@@ -377,7 +505,7 @@ namespace FinanceCalendar
         [Route("save-event")]
         public async Task<IActionResult> SaveThisEvent([FromBody] Event ev, [FromQuery] bool all = false)
         {
-            var userRes = _security.GetUser(Request);
+            var userRes = await _security.GetUser(Request);
             User user = userRes.User;
             if (ev.UserId != user.Id)
             {
@@ -414,7 +542,7 @@ namespace FinanceCalendar
         [Route("delete-event")]
         public async Task<IActionResult> DeleteEvent([FromQuery] Guid id, [FromQuery] Guid recurrenceId)
         {
-            var userRes = _security.GetUser(Request);
+            var userRes = await _security.GetUser(Request);
             User user = userRes.User;
             ServiceResponse<bool> deletion = await _calendar.DeleteEvent(user, id, recurrenceId);
             if (!deletion.Success)

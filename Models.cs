@@ -3,6 +3,7 @@ using System.Data;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 
@@ -52,7 +53,21 @@ namespace FinanceCalendar
         public double Amount { get; set; } = 0.0;
         public DateTime StartDate { get; set; } = DateTime.UtcNow;
         public DateTime RecurrenceEndDate { get; set; } = DateTime.UtcNow;
-        public string Frequency { get; set; } = string.Empty;
+        public string Frequency { get; set; } = "monthly";
+
+        [ForeignKey("User")]
+        public Guid UserId { get; set; } = Guid.NewGuid();
+    }
+
+    public class Debt
+    {
+        [Key]
+        [Required]
+        public Guid Id { get; set; } = Guid.NewGuid();
+        public string Name { get; set; } = string.Empty;
+        public double Balance { get; set; } = 0.0;
+        public double Interest { get; set; } = 0.0;
+        public string Link { get; set; } = string.Empty;
 
         [ForeignKey("User")]
         public Guid UserId { get; set; } = Guid.NewGuid();
@@ -63,6 +78,7 @@ namespace FinanceCalendar
         [Key]
         public Guid UserId { get; set; }
         public List<Expense> Expenses { get; set; } = new List<Expense>();
+        public List<Debt> Debts { get; set; } = new List<Debt>();
         public List<Event> Calendar { get; set; } = new List<Event>();
         public int Month { get; set; } = DateTime.UtcNow.Month;
         public int Year { get; set; } = DateTime.UtcNow.Year;
@@ -138,7 +154,7 @@ namespace FinanceCalendar
     public record ApiResponse<T>
     {
         public bool Success { get; set; } = false;
-        public string Message { get; init; } = "";
+        public string? Message { get; init; } = "";
         public T? Data { get; init; }
         public User? User { get; init; }
 

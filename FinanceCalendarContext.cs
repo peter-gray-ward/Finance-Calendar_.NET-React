@@ -14,6 +14,7 @@ namespace FinanceCalendar
 
         public DbSet<User> Users { get; set; }
         public DbSet<Expense> Expenses { get; set; }
+        public DbSet<Debt> Debts { get; set; }
         public DbSet<Event> Events { get; set; }
 
         public static void RunSqlScript(string connectionString, string scriptPath)

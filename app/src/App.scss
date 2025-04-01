@@ -196,6 +196,55 @@ body {
       font-weight: 200;
     }
   }
+  #table-expense {
+    .th:nth-child(1),
+    .td:nth-child(1) {
+      width: 30%;
+    }
+
+    .th:nth-child(2),
+    .td:nth-child(2) {
+      width: 17%;
+    }
+
+    .th:nth-child(3),
+    .td:nth-child(3) {
+      width: 15%;
+    }
+
+    .th:nth-child(4),
+    .td:nth-child(4) {
+      width: 19%;
+    }
+
+    .th:nth-child(5),
+    .td:nth-child(5) {
+      width: 19%;
+    }
+  }
+
+  #table-debt {
+    .th:nth-child(1),
+    .td:nth-child(1) {
+      width: 30%;
+    }
+
+    .th:nth-child(2),
+    .td:nth-child(2) {
+      width: 15%;
+    }
+
+    .th:nth-child(3),
+    .td:nth-child(3) {
+      width: 15%;
+    }
+
+    .th:nth-child(4),
+    .td:nth-child(4) {
+      width: 40%;
+    }
+  }
+
   .tr {
     width: 100%;
     &.header {
@@ -221,29 +270,11 @@ body {
       box-sizing: border-box;
     }
 
-    .th:nth-child(1),
-    .td:nth-child(1) {
-      width: 30%;
-    }
 
-    .th:nth-child(2),
-    .td:nth-child(2) {
-      width: 17%;
-    }
+    
 
-    .th:nth-child(3),
-    .td:nth-child(3) {
-      width: 15%;
-    }
+    #table-debt {
 
-    .th:nth-child(4),
-    .td:nth-child(4) {
-      width: 19%;
-    }
-
-    .th:nth-child(5),
-    .td:nth-child(5) {
-      width: 19%;
     }
 
     .td {
@@ -257,7 +288,7 @@ body {
       }
     }
 
-    .delete-expense {
+    .delete-t {
       font-size: 1rem;
       @extend .table-button;
     }

@@ -1,5 +1,7 @@
 import { v4 as uuidv4 } from 'uuid';
 
+export type Class<T> = new () => T;
+
 export interface RequestOptions {
     url: string;
     method?: string;
@@ -109,18 +111,25 @@ export class Expense {
     userId: string = '';
 }
 
+export class Debt {
+    id: string =  '';
+    name: string = '';
+    balance: number =  0.0;
+    interest: number = 0.0;
+    userId: string = '';
+    link: string = '';
+}
+
 export interface ApiResponse {
     error?: string;
     message?: string;
     data?: any;
 }
 
-export const ChatModalItems: ModalItem[] = [
-    {
-        label: 'Profile',
-        route: '/profile'
-    }
-];
+export interface TableObject {
+    id: string;
+    [key: string]: any;
+}
 
 export const DOW: string[] = [
     "Monday","Tuesday",

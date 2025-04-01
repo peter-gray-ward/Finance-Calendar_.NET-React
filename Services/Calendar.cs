@@ -257,6 +257,14 @@ namespace FinanceCalendar.Services
             return expense;
         }
 
+        public async Task<Debt> AddDebt(User user)
+        {
+            Debt debt = new() { UserId = user.Id, Id = Guid.NewGuid() };
+            await _context.Debts.AddAsync(debt);
+            await _context.SaveChangesAsync();
+            return debt;
+        }
+
         public async Task<ServiceResponse<object>> DeleteExpense(User user, Guid expenseId)
         {
             var expense = _context.Expenses.FirstOrDefault(e => e.Id == expenseId);
@@ -276,9 +284,27 @@ namespace FinanceCalendar.Services
                 .build();
         }
 
+        public async Task<ServiceResponse<object>> DeleteDebt(User user, Guid debtId)
+        {
+            var debt = _context.Debts.FirstOrDefault(e => e.Id == debtId);
+            if (debt == null)
+            {
+                return new ServiceResponse<object>.Builder()
+                    .success(false)
+                    .message("Debt not found.")
+                    .build();
+            }
+
+            _context.Debts.Remove(debt);
+            _context.SaveChangesAsync();
+
+            return new ServiceResponse<object>.Builder()
+                .success(true)
+                .build();
+        }
+
         public async Task<ServiceResponse<object>> UpdateExpense(User user, Expense expense)
         {
-            Console.WriteLine("UpdateExpense");
             try
             {
                 var existingExpense = _context.Expenses.FirstOrDefault(e => e.Id == expense.Id);
@@ -298,6 +324,43 @@ namespace FinanceCalendar.Services
                         if (prop.Name == "Amount" && newValue == null) newValue = 0.0;
 
                         prop.SetValue(existingExpense, newValue);
+                    }
+                }
+
+                await _context.SaveChangesAsync();
+
+                return new ServiceResponse<object>.Builder().success(true).build();
+            }
+            catch (Exception e)
+            {
+                return new ServiceResponse<object>.Builder()
+                    .success(false)
+                    .message(e.Message)
+                    .build();
+            }
+        }
+
+        public async Task<ServiceResponse<object>> UpdateDebt(User user, Debt debt)
+        {
+            try
+            {
+                var existingDebt = _context.Debts.FirstOrDefault(e => e.Id == debt.Id);
+                if (existingDebt == null)
+                {
+                    await _context.Debts.AddAsync(debt);
+                }
+                else
+                {
+                    var properties = typeof(Debt).GetProperties();
+                    foreach (var prop in properties)
+                    {
+                        if (prop.Name == "Id") continue;
+
+                        var newValue = prop.GetValue(debt);
+
+                        if (prop.Name == "Balance" && newValue == null) newValue = 0.0;
+
+                        prop.SetValue(existingDebt, newValue);
                     }
                 }
 

@@ -1,16 +1,17 @@
 import React, { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import './App.scss';
-import { User, DOW, MONTHNAMES, Day, ApiResponse, IEvent, Expense, Position } from './types';
+import { 
+  User, DOW, MONTHNAMES, Day, ApiResponse, 
+  IEvent, Expense, Position, Debt
+} from './types';
 import Modal from './Modal';
 import { xhr, capitalizeKeys } from './util';
-import { error } from 'console';
-import Expenses from './Expenses';
-import Debts from './Debts';
 import EventModal from './EventModal';
 import DayBlock from './DayBlock';
 import Navigation from './Navigation';
 import Outlook from './Outlook';
+import Table from './Table';
 
 function App({ _user }: { _user: User }) {
   const [user, setUser] = useState(_user);
@@ -104,11 +105,105 @@ function App({ _user }: { _user: User }) {
 
   return <Router>
     <Navigation setEvent={setEvent} />
+
     <header id="left">
       <button onClick={logout}>logout</button>
-      <Expenses user={user} setUser={setUser} setCalendar={setCalendar} />
-      <Debts user={user} />
+      <Table 
+        cls={Expense}
+        title="Expense" 
+        user={user} 
+        columns={['Expense', 'Frequency', 'Amount', 'Start Date', 'End Date']}
+        order={['name', 'frequency', 'amount', 'startDate', 'recurrenceEndDate']}
+        onAdd={(res: ApiResponse) => {
+          if (res.success) {
+            setUser({
+              ...user,
+              account: {
+                ...user.account,
+                expenses: [
+                  ...user.account.expenses,
+                  res.data as Expense
+                ]
+              }
+            });
+          }
+        }}
+        onDelete={(res: ApiResponse) => {
+          if (res.success) {
+            setUser({
+              ...user,
+              account: {
+                ...user.account,
+                expenses: user.account.expenses.filter((e: Expense) => e.id !== res.data)
+              }
+            });
+          }
+        }}
+        localUpdate={(expense: Expense) => {
+          setUser({
+            ...user,
+            account: {
+              ...user.account,
+              expenses: user.account.expenses.map((e: Expense) => {
+                if (e.id == expense.id) {
+                  debugger
+                  return expense;
+                }
+                return e;
+              })
+            }
+          });
+        }}
+        data={user.account.expenses} />
+      
+      <Table
+        cls={Debt}
+        title="Debt"
+        user={user} 
+        columns={['Creditor', 'Balance', 'Interest', 'Link']}
+        order={['name', 'balance', 'interest', 'link']}
+        onAdd={(res: ApiResponse) => {
+          if (res.success) {
+            setUser({
+              ...user,
+              account: {
+                ...user.account,
+                debts: [
+                  ...user.account.debts,
+                  res.data as Debt
+                ]
+              }
+            });
+          }
+        }}
+        onDelete={(res: ApiResponse) => {
+          if (res.success) {
+            setUser({
+              ...user,
+              account: {
+                ...user.account,
+                debts: user.account.debts.filter((d: Debt) => d.id !== res.data)
+              }
+            });
+          }
+        }}
+        localUpdate={(debt: Debt) => {
+          setUser({
+            ...user,
+            account: {
+              ...user.account,
+              debts: user.account.debts.map((d: Debt) => {
+                if (d.id == debt.id) {
+                  return debt;
+                }
+                return d;
+              })
+            }
+          });
+        }}
+        data={user.account.debts} />
     </header>
+
     <main id="main">
       <div id="calendar-month-header">
         <div>
@@ -161,9 +256,11 @@ function App({ _user }: { _user: User }) {
         }
       </div>
     </main>
+
     <footer id="right">
       <Outlook calendar={calendar} user={user} innerWidth={windowWidth} />
     </footer>
+
     <Routes>
       <Route path="/" element={<></>} />
       <Route path="/event/:id" element={<EventModal 

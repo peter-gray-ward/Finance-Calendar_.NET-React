@@ -3,9 +3,9 @@ using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Security.Claims;
-using System.Web;
 using FinanceCalendar;
 
 namespace FinanceCalendar.Services
@@ -15,15 +15,15 @@ namespace FinanceCalendar.Services
         private readonly IConfiguration _configuration;
         private readonly FinanceCalendarContext _context;
 
-        public Security(IConfiguration configuration, FinanceCalendarContext _context)
+        public Security(IConfiguration configuration, FinanceCalendarContext context)
         {
             _configuration = configuration;
-            this._context = _context;
+            _context = context;
         }
 
-        public ServiceResponse<string> RegisterUser(User user)
+        public async Task<ServiceResponse<string>> RegisterUser(User user)
         {
-            if (_context.Users.Any(u => u.UserName == user.UserName))
+            if (await _context.Users.AnyAsync(u => u.UserName == user.UserName))
             {
                 return new ServiceResponse<string>.Builder()
                     .success(false)
@@ -33,11 +33,11 @@ namespace FinanceCalendar.Services
 
             user.Password = BCrypt.Net.BCrypt.HashPassword(user.Password);
 
-            _context.Users.Add(user);
-            _context.SaveChanges();
+            await _context.Users.AddAsync(user);
+            await _context.SaveChangesAsync();
 
             var account = new Account { UserId = user.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
-            account.Expenses = _context.Expenses.Where(e => e.UserId == user.Id).ToList();
+            account.Expenses = await _context.Expenses.Where(e => e.UserId == user.Id).ToListAsync();
             user.Account = account;
 
             var token = GenerateToken(user);
@@ -50,9 +50,9 @@ namespace FinanceCalendar.Services
                 .build();
         }
 
-        public ServiceResponse<string> LoginUser(User user)
+        public async Task<ServiceResponse<string>> LoginUser(User user)
         {
-            var existingUser = _context.Users.SingleOrDefault(u => u.UserName == user.UserName);
+            var existingUser = await _context.Users.SingleOrDefaultAsync(u => u.UserName == user.UserName);
             if (existingUser == null || !BCrypt.Net.BCrypt.Verify(user.Password, existingUser.Password))
             {
                 return new ServiceResponse<string>.Builder()
@@ -62,7 +62,8 @@ namespace FinanceCalendar.Services
             }
 
             var account = new Account { UserId = existingUser.Id, Month = DateTime.Now.Month, Year = DateTime.Now.Year };
-            account.Expenses = _context.Expenses.Where(e => e.UserId == existingUser.Id).ToList();
+            account.Expenses = await _context.Expenses.Where(e => e.UserId == existingUser.Id).ToListAsync();
+            account.Debts = await _context.Debts.Where(d => d.UserId == existingUser.Id).ToListAsync();
             existingUser.Account = account;
 
             var token = GenerateToken(existingUser);
@@ -75,7 +76,7 @@ namespace FinanceCalendar.Services
                 .build();
         }
 
-        public ServiceResponse<object> GetUser(HttpRequest request)
+        public async Task<ServiceResponse<object>> GetUser(HttpRequest request)
         {
             var token = request.Cookies["finance-calendar-jwt"];
             if (string.IsNullOrEmpty(token))
@@ -86,22 +87,43 @@ namespace FinanceCalendar.Services
                     .build();
             }
 
-            Account account = DecodeToken(token);
-            var user = _context.Users.SingleOrDefault(u => u.Id == account.UserId);
+            var account = DecodeToken(token);
+
+            var user = await _context.Users
+                .AsNoTracking()
+                .SingleOrDefaultAsync(u => u.Id == account.UserId);
+
             if (user == null)
             {
                 return new ServiceResponse<object>.Builder()
                     .success(false)
-                    .message("User not found")
+                    .message("User not found.")
                     .build();
             }
 
-            user.Account = account;
+            var expenses = await _context.Expenses
+                .Where(e => e.UserId == user.Id)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var debts = await _context.Debts
+                .Where(d => d.UserId == user.Id)
+                .AsNoTracking()
+                .ToListAsync();
+
+            user.Account = new Account
+            {
+                UserId = user.Id,
+                Month = account.Month,
+                Year = account.Year,
+                Expenses = expenses,
+                Debts = debts
+            };
 
             return new ServiceResponse<object>.Builder()
-                    .success(true)
-                    .user(user)
-                    .build();
+                .success(true)
+                .user(user)
+                .build();
         }
 
         public string GenerateToken(User user)
@@ -132,7 +154,7 @@ namespace FinanceCalendar.Services
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public ServiceResponse<string> UpdateToken(string token, Account account)
+        public async Task<ServiceResponse<string>> UpdateToken(string token, Account account)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? throw new ArgumentNullException("Jwt:Key"));
@@ -180,21 +202,17 @@ namespace FinanceCalendar.Services
             }
         }
 
-        public Account DecodeToken(string token)
+        private Account DecodeToken(string token)
         {
             var handler = new JwtSecurityTokenHandler();
             var jwtToken = handler.ReadJwtToken(token);
-            var userId = Guid.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? Guid.Empty.ToString());
 
-            var account = new Account
+            return new Account
             {
-                UserId = userId,
+                UserId = Guid.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "UserId")?.Value ?? Guid.Empty.ToString()),
                 Month = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "Month")?.Value ?? "0"),
-                Year = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "Year")?.Value ?? "0"),
-                Expenses = _context.Expenses.Where(e => e.UserId == userId).ToList()
+                Year = int.Parse(jwtToken.Claims.FirstOrDefault(c => c.Type == "Year")?.Value ?? "0")
             };
-
-            return account;
         }
     }
 }

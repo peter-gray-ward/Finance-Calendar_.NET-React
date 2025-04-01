@@ -35,3 +35,13 @@ CREATE TABLE IF NOT EXISTS "Expenses" (
     "UserId" UUID,
     FOREIGN KEY ("UserId") REFERENCES "Users" ("Id")
 );
+
+CREATE TABLE IF NOT EXISTS "Debts" (
+    "Id" UUID PRIMARY KEY,
+    "Name" VARCHAR(255),
+    "Balance" DOUBLE PRECISION,
+    "Interest" DOUBLE PRECISION,
+    "Link" VARCHAR(1000),
+    "UserId" UUID,
+    FOREIGN KEY ("UserId") REFERENCES "Users" ("Id")
+);

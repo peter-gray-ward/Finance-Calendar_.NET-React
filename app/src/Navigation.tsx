@@ -18,7 +18,8 @@ export default function Navigation({ setEvent }: { setEvent: React.Dispatch<Reac
     const header = document.querySelector('header');
 
     if (body.classList.contains('view-left-right')) {
-       body.classList.remove('view-left-right');
+      body.classList.remove('view-left-right');
+      body.classList.add('view-right-main');
     } else if (body.classList.contains('view-right-main')) {
       body.classList.add('view-left-right');
       body.classList.remove('view-right-main');
@@ -44,7 +45,8 @@ export default function Navigation({ setEvent }: { setEvent: React.Dispatch<Reac
     const header = document.querySelector('header');
 
     if (body.classList.contains('view-left-right')) {
-       body.classList.remove('view-left-right');
+      body.classList.remove('view-left-right');
+      body.classList.add('view-left-main');
     } else if (body.classList.contains('view-left-main')) {
       body.classList.add('view-left-right');
       body.classList.remove('view-left-main');
