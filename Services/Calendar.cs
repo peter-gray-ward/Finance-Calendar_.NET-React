@@ -70,6 +70,7 @@ namespace FinanceCalendar.Services
                                 if (debt.Id == ev.DebtId)
                                 {
                                     debt.Balance += ev.Amount;
+                                    total -= ev.Amount;
                                 }
                             }
                         }
@@ -145,7 +146,7 @@ namespace FinanceCalendar.Services
             await _context.SaveChangesAsync();
 
             List<Event> events = await _context.Events
-                .Where(e => e.UserId == user.Id && e.Date >= DateTime.UtcNow.Date && e.DebtId == null)
+                .Where(e => e.UserId == user.Id && e.Date >= DateTime.UtcNow.Date)
                 .OrderBy(e => e.Date)
                 .ToListAsync();
 
@@ -154,11 +155,16 @@ namespace FinanceCalendar.Services
             {
                 for (int i = 0; i < events.Count; i++)
                 {
-                    events[i].Total = runningTotal + events[i].Amount;
+                    if (events[i].DebtId is not null)
+                    {
+                        events[i].Total = runningTotal - events[i].Amount;
+                    }
+                    else
+                    {
+                        events[i].Total = runningTotal + events[i].Amount;
+                    }
                     _context.Entry(events[i]).Property(ev => ev.Total).IsModified = true;
                     runningTotal = events[i].Total;
-
-                    if (i < 10) Console.WriteLine($"{events[i].Date}: {events[i].Summary} = {events[i].Total}");
                 }
             }
 
@@ -525,6 +531,8 @@ namespace FinanceCalendar.Services
                     }
                 }
 
+                await CalculateEventTotals(user);
+
                 await _context.SaveChangesAsync();
 
                 return new ServiceResponse<Event>.Builder()
@@ -556,6 +564,7 @@ namespace FinanceCalendar.Services
                     if (events.Any())
                     {
                         _context.Events.RemoveRange(events);
+                        await CalculateEventTotals(user);
                         await _context.SaveChangesAsync();
                         return new ServiceResponse<bool>.Builder()
                             .success(true)
@@ -568,6 +577,7 @@ namespace FinanceCalendar.Services
                     if (ev != null)
                     {
                         _context.Events.Remove(ev);
+                        await CalculateEventTotals(user);
                         await _context.SaveChangesAsync();
                         return new ServiceResponse<bool>.Builder()
                             .success(true)

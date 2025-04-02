@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { Day, User, MONTHNAMES } from './types';
+import { Day, User, MONTHNAMES, DebtRecord } from './types';
 import { findLastEventOfMonth, findLastDayOfMonth } from './util';
 
 export default function Outlook(
@@ -12,14 +12,15 @@ export default function Outlook(
     user: User,
     innerWidth: number
   }) {
+  const [debtView, setDebtView] = useState<string>('All');
 
 	const groupedMonths: Day[][][][] = useMemo(() => {
     const result: Day[][][][] = [];
-
     let allMonths: Day[][][] = [];
     let group: Day[][][] = [];
     const groupSize = innerWidth < 950 ? 2 : 3;
     let groupIndex = 0;
+    
 
     calendar.forEach((week: Day[]) => {
       let monthsAccounted = new Set();
@@ -63,10 +64,9 @@ export default function Outlook(
               const lastEventOfMonth = findLastEventOfMonth(monthIndex, month, user);
               let monthFinalTotal = lastEventOfMonth.total.toFixed(0);
               const inTheNegative = +monthFinalTotal < 0;
-              var debtBalance = 0;
-              for (let debt of lastDayOfMonth.debts) {
-                debtBalance += debt.balance;
-              }
+              let debtBalance: number = debtView == 'All' 
+                  ? lastDayOfMonth.debts.map((d: DebtRecord) => d.balance).reduce((a, b) => a + b)
+                  : lastDayOfMonth.debts.find((d: DebtRecord) => d.name == debtView)!.balance;
               return <div key={`${i}.${monthIndex}`} className="mini-month">
   							<h2>{MONTHNAMES[monthIndex - 1]} {month[2][1].year}</h2>
   							<div className="row">
@@ -87,14 +87,28 @@ export default function Outlook(
     							}
                 </div>
                 <div className="info-footer">
-                  <i>Db: </i>
-                  <span className={debtBalance < 0 ? 'negative' : 'positive'}>
-                    {debtBalance < 0 ? '-$' + Math.abs(+debtBalance).toFixed(0) : '$' + debtBalance.toFixed(0)}
-                  </span>
-                  <i>Ch: </i>
-                  <span className={inTheNegative ? 'negative' : 'positive'}>
-                    {inTheNegative ? '-$' + Math.abs(+monthFinalTotal) : '$' + monthFinalTotal}
-                  </span>
+                  <div>
+                    <select onChange={(e) => setDebtView(e.target.value)} 
+                      value={debtView}>
+                      <option value="All">All</option>
+                      {
+                        lastDayOfMonth.debts.map((debt: DebtRecord) => <option value={debt.name}>
+                          {debt.name}
+                        </option>)
+                      }
+                    </select>
+                    <div className="checking-title">Checking</div>
+                  </div>
+                  <div>
+                    <span className={debtBalance < 0 ? 'negative' : 'positive'}>
+                      {
+                        debtBalance < 0 ? '-$' + Math.abs(debtBalance).toFixed(0) : '$' + debtBalance.toFixed(0)
+                      }
+                    </span>
+                    <span className={inTheNegative ? 'negative' : 'positive'}>
+                      {inTheNegative ? '-$' + Math.abs(+monthFinalTotal) : '$' + monthFinalTotal}
+                    </span>
+                  </div>
                 </div>
   						</div>
             })
