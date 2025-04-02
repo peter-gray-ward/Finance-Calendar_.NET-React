@@ -18,6 +18,7 @@ export default function DayBlock(
     const x = e.clientX + 400 > window.innerWidth ? window.innerWidth - 410 : e.clientX;
     const y = e.clientY + 200 > window.innerHeight ? window.innerHeight - 210 : e.clientY;
     const eventOrigin: Position = { left: x, top: y } as Position;
+    
     setEventOrigin(eventOrigin);
     setEvent(event);
     navigate(`/event/${event.id}`, {

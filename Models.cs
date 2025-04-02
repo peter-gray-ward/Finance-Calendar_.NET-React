@@ -39,6 +39,7 @@ namespace FinanceCalendar
         public double Balance { get; set; } = 0.0;
         public bool Exclude { get; set; } = false;
         public string Frequency { get; set; } = string.Empty;
+        public Guid? DebtId { get; set; } = null;
 
         [ForeignKey("User")]
         public Guid UserId { get; set; } = Guid.NewGuid();
@@ -66,11 +67,19 @@ namespace FinanceCalendar
         public Guid Id { get; set; } = Guid.NewGuid();
         public string Name { get; set; } = string.Empty;
         public double Balance { get; set; } = 0.0;
+        public DateTime Date { get; set; } = DateTime.UtcNow;
         public double Interest { get; set; } = 0.0;
+        public string InterestType { get; set; } = "compound";
         public string Link { get; set; } = string.Empty;
 
         [ForeignKey("User")]
         public Guid UserId { get; set; } = Guid.NewGuid();
+    }
+
+    public record DebtRecord
+    {
+        public string Name { get; set; } = string.Empty;
+        public double Balance { get; set; } = 0.0;
     }
 
     public class Account
@@ -96,6 +105,7 @@ namespace FinanceCalendar
         public int Date { get; set; } = DateTime.UtcNow.Day;
         public string Name { get; set; } = string.Empty;
         public List<Event> Events { get; set; } = new List<Event>();
+        public List<DebtRecord> Debts { get; set; } = new List<DebtRecord>();
         public int Year { get; set; } = DateTime.UtcNow.Year;
         public int Month { get; set; } = DateTime.UtcNow.Month;
         public bool IsTodayOrLater { get; set; } = false;

@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import { Event, IEvent, Position, User, ApiResponse, Day } from './types';
+import { Event, IEvent, Position, User, ApiResponse, Day, Debt } from './types';
 import { xhr } from './util';
 
 export default function EventModal({ 
@@ -43,7 +43,6 @@ export default function EventModal({
       body: localEvent
     }).then((res: ApiResponse) => {
       if (res.success) {
-        console.log("@", res);
         setCalendar(res.data as Day[][]);
         setSaved(true)
         setTimeout(() => {
@@ -92,8 +91,6 @@ export default function EventModal({
 
   if (!origin.left && !origin.top) return null;
 
-  console.log(event.summary, localEvent.summary);
-
 	return <div className="modal" 
     style={{
       left: origin.left + 'px', 
@@ -114,6 +111,15 @@ export default function EventModal({
               value={localEvent.summary} 
               name="summary"
               onChange={(e) => setLocalEvent({ ...localEvent, summary: e.target.value })}  />
+          </div>
+          <div id="debt-id">
+            <label>Debt Id</label>
+            <select name="debtId" value={localEvent.debtId ?? ""} onChange={(e) => setLocalEvent({ ...localEvent, debtId: e.target.value.length ? e.target.value : null })}>
+              <option value="">None</option>
+              {
+                user.account.debts.map((debt: Debt) => <option value={debt.id}>{debt.name}</option>)
+              }
+            </select>
           </div>
           <div id="frequency-container">
             <label>Frequency</label>

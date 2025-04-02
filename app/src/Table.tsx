@@ -26,7 +26,8 @@ export default function Table<T extends TableObject>({
   const [successfulUpdates, setSuccessfulUpdates] = useState<string[]>([]);
 
   const selects: { [key: string]: string[] } = useMemo(() => ({
-    'frequency': ['daily','weekly','biweekly','monthly','trimonthly']
+    'frequency': ['daily','weekly','biweekly','monthly','trimonthly'],
+    'interestType': ['compound', 'simple']
   }), []);
 
   const addT = useCallback(() => {
@@ -93,6 +94,7 @@ export default function Table<T extends TableObject>({
             const values = order.map((key: string, index: number) => {
               let result;
               let val: any = datum[key];
+
               switch (typeof val) {
                 case "string":
                   if (selects[key]) {
@@ -106,6 +108,11 @@ export default function Table<T extends TableObject>({
                     </div>;
                   } else if (/date/i.test(key)) {
                     result = <input name={key} className="td" type="date" value={val.split('T')[0]} onChange={updateT} />
+                  } else if (/link|href/i.test(key)) {
+                    result = <div className="td">
+                      <a href={val} target="_blank">🔗</a>
+                      <input name={key} type="text" value={val} onChange={updateT} />
+                    </div>
                   } else {
                     result = <input name={key} className="td" type="text" value={val} onChange={updateT} />
                   }

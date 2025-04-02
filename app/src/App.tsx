@@ -103,6 +103,8 @@ function App({ _user }: { _user: User }) {
     });
   }, []);
 
+  console.log(calendar)
+
   return <Router>
     <Navigation setEvent={setEvent} />
 
@@ -146,7 +148,6 @@ function App({ _user }: { _user: User }) {
               ...user.account,
               expenses: user.account.expenses.map((e: Expense) => {
                 if (e.id == expense.id) {
-                  debugger
                   return expense;
                 }
                 return e;
@@ -160,8 +161,8 @@ function App({ _user }: { _user: User }) {
         cls={Debt}
         title="Debt"
         user={user} 
-        columns={['Creditor', 'Balance', 'Interest', 'Link']}
-        order={['name', 'balance', 'interest', 'link']}
+        columns={['Creditor', 'Balance', 'Interest', 'Type', 'Date', 'Link']}
+        order={['name', 'balance', 'interest', 'interestType', 'date', 'link']}
         onAdd={(res: ApiResponse) => {
           if (res.success) {
             setUser({

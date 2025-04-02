@@ -43,6 +43,7 @@ export interface Day {
     date: number;
     name: string;
     events: IEvent[];
+    debts: DebtRecord[];
     year: number;
     month: number;
     isTodayOrLater: boolean;
@@ -63,6 +64,7 @@ export interface IEvent {
     exclude: boolean;
     frequency: string;
     userId: string;
+    debtId?: string|null;
 }
 
 export class Event {
@@ -77,6 +79,7 @@ export class Event {
     exclude: boolean = false;
     frequency: string = 'monthly';
     userId: string;
+    debtId?: string|null;
 
     constructor(day: Day, userId: string) {
         const date = `${day.year}-${day.month < 10 ? '0' : ''}${day.month}-${day.date < 10 ? '0' : ''}${day.date}`;
@@ -115,9 +118,16 @@ export class Debt {
     id: string =  '';
     name: string = '';
     balance: number =  0.0;
+    date: string = new Date().toISOString().split('T')[0];
     interest: number = 0.0;
+    interestType: string = 'compound';
     userId: string = '';
     link: string = '';
+}
+
+export interface DebtRecord {
+    name: string;
+    balance: number;
 }
 
 export interface ApiResponse {

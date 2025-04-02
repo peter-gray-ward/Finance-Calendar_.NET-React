@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using FinanceCalendar;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ namespace FinanceCalendar.Services
 
         public async Task<List<List<Day>>> GenerateCalendar(User user)
         {
+            Console.WriteLine($"Generating calendar with {user.Account.Debts.Count} debts");
             DateTime currentMonth = new DateTime(user.Account.Year, user.Account.Month, 1);
             DateTime previousMonth = currentMonth.AddMonths(-1);
             DateTime nextMonth = currentMonth.AddMonths(13);
@@ -50,17 +52,9 @@ namespace FinanceCalendar.Services
 
                 bool isToday = startDate.Date == today.Date;
                 bool isAfterToday = isToday || startDate.Date > today.Date;
+                
 
-                Day day = new Day
-                {
-                    Date = dayOfMonth,
-                    Name = DOW[dayOfWeekIndex],
-                    Year = startDate.Year,
-                    Month = startDate.Month,
-                    IsToday = isToday,
-                    IsTodayOrLater = isAfterToday,
-                    DOW = dayOfWeekIndex
-                };
+                double total = 0.0;
 
                 List<Event> dayEvents = new List<Event>();
                 foreach (var ev in events)
@@ -68,10 +62,55 @@ namespace FinanceCalendar.Services
                     if (startDate.Date == ev.Date.Date)
                     {
                         dayEvents.Add(ev);
-                        day.Total = ev.Total;
+                        total = ev.Total;
+                        if (ev.DebtId is not null)
+                        {
+                            foreach (Debt debt in user.Account.Debts)
+                            {
+                                if (debt.Id == ev.DebtId)
+                                {
+                                    debt.Balance += ev.Amount;
+                                }
+                            }
+                        }
                     }
                 }
-                day.Events = dayEvents;
+
+                List<DebtRecord> dayDebts = new();
+
+                foreach (Debt debt in user.Account.Debts)
+                {
+                    if (debt.InterestType == "compound")
+                    {
+                        debt.Balance += (debt.Balance * debt.Interest) / 365;
+                    }
+                    else if (debt.InterestType == "simple")
+                    {
+                        if (startDate.Day == debt.Date.Day)
+                        {
+                            debt.Balance += (debt.Interest * debt.Balance) / 12;
+                        }
+                    }
+
+                    dayDebts.Add(new DebtRecord() { 
+                        Name = debt.Name, 
+                        Balance = debt.Balance 
+                    });
+                }
+
+                Day day = new Day
+                {
+                    Total = total,
+                    Date = dayOfMonth,
+                    Name = DOW[dayOfWeekIndex],
+                    Year = startDate.Year,
+                    Month = startDate.Month,
+                    IsToday = isToday,
+                    IsTodayOrLater = isAfterToday,
+                    DOW = dayOfWeekIndex,
+                    Debts = dayDebts,
+                    Events = dayEvents
+                };
 
                 if (isToday)
                 {
@@ -106,7 +145,7 @@ namespace FinanceCalendar.Services
             await _context.SaveChangesAsync();
 
             List<Event> events = await _context.Events
-                .Where(e => e.UserId == user.Id && e.Date >= DateTime.UtcNow.Date)
+                .Where(e => e.UserId == user.Id && e.Date >= DateTime.UtcNow.Date && e.DebtId == null)
                 .OrderBy(e => e.Date)
                 .ToListAsync();
 

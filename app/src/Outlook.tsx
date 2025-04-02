@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useCallback } from 'react';
 import { Day, User, MONTHNAMES } from './types';
-import { findLastEventOfMonth } from './util';
+import { findLastEventOfMonth, findLastDayOfMonth } from './util';
 
 export default function Outlook(
   { 
@@ -59,9 +59,14 @@ export default function Outlook(
 					{
 						monthGroup.map((month: Day[][], j: number) => {
               const monthIndex = month[2][1].month;
+              const lastDayOfMonth = findLastDayOfMonth(monthIndex, month, user);
               const lastEventOfMonth = findLastEventOfMonth(monthIndex, month, user);
               let monthFinalTotal = lastEventOfMonth.total.toFixed(0);
               const inTheNegative = +monthFinalTotal < 0;
+              var debtBalance = 0;
+              for (let debt of lastDayOfMonth.debts) {
+                debtBalance += debt.balance;
+              }
               return <div key={`${i}.${monthIndex}`} className="mini-month">
   							<h2>{MONTHNAMES[monthIndex - 1]} {month[2][1].year}</h2>
   							<div className="row">
@@ -82,6 +87,11 @@ export default function Outlook(
     							}
                 </div>
                 <div className="info-footer">
+                  <i>Db: </i>
+                  <span className={debtBalance < 0 ? 'negative' : 'positive'}>
+                    {debtBalance < 0 ? '-$' + Math.abs(+debtBalance).toFixed(0) : '$' + debtBalance.toFixed(0)}
+                  </span>
+                  <i>Ch: </i>
                   <span className={inTheNegative ? 'negative' : 'positive'}>
                     {inTheNegative ? '-$' + Math.abs(+monthFinalTotal) : '$' + monthFinalTotal}
                   </span>

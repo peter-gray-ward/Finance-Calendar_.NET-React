@@ -57,6 +57,19 @@ export const serializeRow = <T>(tr: HTMLElement, cls: new () => T, additionalPro
     return result;
 };
 
+export const findLastDayOfMonth = (monthIndex: number, month: Day[][], user: User): Day => {
+    const today = new Date();
+    for (let i = month.length - 1; i >= 0; i--) {
+        for (let j = month[i].length - 1; j >= 0; j--) {
+            let day: Day = month[i][j] as Day;
+            if (day.month == monthIndex) {
+                return day;
+            }
+        }
+    }
+    return {} as Day;
+}
+
 export const findLastEventOfMonth = (monthIndex: number, month: Day[][], user: User): IEvent => {
     const today = new Date();
     for (let i = month.length - 1; i >= 0; i--) {

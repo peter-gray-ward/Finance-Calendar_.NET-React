@@ -20,7 +20,9 @@ CREATE TABLE IF NOT EXISTS "Events" (
     "Balance" DOUBLE PRECISION,
     "Exclude" BOOLEAN,
     "Frequency" VARCHAR(255),
+    "DebtId" UUID,
     "UserId" UUID,
+    FOREIGN KEY ("DebtId") REFERENCES "Debts" ("Id"),
     FOREIGN KEY ("UserId") REFERENCES "Users" ("Id")
 );
 
@@ -41,6 +43,7 @@ CREATE TABLE IF NOT EXISTS "Debts" (
     "Name" VARCHAR(255),
     "Balance" DOUBLE PRECISION,
     "Interest" DOUBLE PRECISION,
+    "Date" TIMESTAMPZ NOT NULL,
     "Link" VARCHAR(1000),
     "UserId" UUID,
     FOREIGN KEY ("UserId") REFERENCES "Users" ("Id")
