@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { Event, IEvent, Position, User, ApiResponse, Day, Debt } from './types';
 import { xhr } from './util';
@@ -18,6 +18,12 @@ export default function EventModal({
   const { event, origin: initialOrigin, user } = location.state || {};
   const [saved, setSaved] = useState<boolean>(false);
   const [localEvent, setLocalEvent] = useState<IEvent>(event);
+  const validatedEvent = useMemo(() => {
+    return {
+      ...localEvent,
+      amount: (localEvent.amount == '' || Number.isNaN(localEvent.amount) ? 0.0 : +localEvent.amount) 
+    };
+  }, [localEvent]);
   useEffect(() => {
     if (event) {
       setLocalEvent(event);
@@ -40,7 +46,7 @@ export default function EventModal({
     xhr({
       method: 'PUT',
       url: '/save-event',
-      body: localEvent
+      body: validatedEvent
     }).then((res: ApiResponse) => {
       if (res.success) {
         setCalendar(res.data as Day[][]);
@@ -55,7 +61,7 @@ export default function EventModal({
     xhr({
       method: 'PUT',
       url: '/save-event?all=true',
-      body: localEvent
+      body: validatedEvent
     }).then((res: ApiResponse) => {
       if (res.success) {
         setCalendar(res.data as Day[][]);
@@ -117,7 +123,7 @@ export default function EventModal({
             <select name="debtId" value={localEvent.debtId ?? ""} onChange={(e) => setLocalEvent({ ...localEvent, debtId: e.target.value.length ? e.target.value : null })}>
               <option value="">None</option>
               {
-                user.account.debts.map((debt: Debt) => <option value={debt.id}>{debt.name}</option>)
+                user.account.debts.map((debt: Debt) => <option key={debt.id} value={debt.id}>{debt.name}</option>)
               }
             </select>
           </div>
@@ -138,9 +144,10 @@ export default function EventModal({
           <div id="amount-div">
             <label>Amount</label>
             <input className={`this focusable ${localEvent.amount < 0 ? 'negative' : 'positive'}`} 
-              type="number" id="event-amount" name="amount" 
+              type="text" id="event-amount" name="amount"
+              data-type="number"
               value={localEvent.amount}
-              onChange={(e) => setLocalEvent({ ...localEvent, amount: +e.target.value })} />
+              onChange={(e) => setLocalEvent({ ...localEvent, amount: e.target.value })} />
           </div>
           
           <div id="date-container">

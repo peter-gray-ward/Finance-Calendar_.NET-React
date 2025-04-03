@@ -103,8 +103,6 @@ function App({ _user }: { _user: User }) {
     });
   }, []);
 
-  console.log(calendar)
-
   return <Router>
     <Navigation setEvent={setEvent} />
 

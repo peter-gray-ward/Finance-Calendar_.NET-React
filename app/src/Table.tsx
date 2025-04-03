@@ -86,11 +86,11 @@ export default function Table<T extends TableObject>({
       <div className="table" id={`table-${title.toLowerCase()}`}>
         <div className="tr header">
           {
-            columns.map((th: string) => <div className="th">{th}</div>)
+            columns.map((th: string) => <div key={th} className="th">{th}</div>)
           }
         </div>
         {
-          data.map((datum: T) => {
+          data.map((datum: T, i: number) => {
             const values = order.map((key: string, index: number) => {
               let result;
               let val: any = datum[key];
@@ -99,26 +99,26 @@ export default function Table<T extends TableObject>({
                 case "string":
                   if (selects[key]) {
                     if (!val) val = selects[0];
-                    result = <div className="td select-container">
+                    result = <div key={i + '.' + index} className="td select-container">
                         <select required name={key} value={val} onChange={updateT}>
                         {
-                          selects[key].map((option: string) => <option value={option}>{option}</option>)
+                          selects[key].map((option: string) => <option key={i + '.' + index + '.' + option} value={option}>{option}</option>)
                         }
                       </select>
                     </div>;
                   } else if (/date/i.test(key)) {
-                    result = <input name={key} className="td" type="date" value={val.split('T')[0]} onChange={updateT} />
+                    result = <input key={i + '.' + index} name={key} className="td" type="date" value={val.split('T')[0]} onChange={updateT} />
                   } else if (/link|href/i.test(key)) {
-                    result = <div className="td">
+                    result = <div key={i + '.' + index} className="td">
                       <a href={val} target="_blank">🔗</a>
                       <input name={key} type="text" value={val} onChange={updateT} />
                     </div>
                   } else {
-                    result = <input name={key} className="td" type="text" value={val} onChange={updateT} />
+                    result = <input key={i + '.' + index} name={key} className="td" type="text" value={val} onChange={updateT} />
                   }
                   break;
                 case "number":
-                    result = <input name={key} className="td" type="number" value={val || val == 0.0 ? val : 0.0} onChange={updateT} />;
+                    result = <input key={i + '.' + index} name={key} className="td" type="number" value={val || val == 0.0 ? val : 0.0} onChange={updateT} />;
                     break;
               }
               return result;

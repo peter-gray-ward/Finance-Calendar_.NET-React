@@ -58,7 +58,7 @@ export interface IEvent {
     summary: string;
     date: string;
     recurrenceEndDate: string;
-    amount: number;
+    amount: number|string;
     total: number;
     balance: number;
     exclude: boolean;

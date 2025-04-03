@@ -92,7 +92,7 @@ export default function Outlook(
                       value={debtView}>
                       <option value="All">All</option>
                       {
-                        lastDayOfMonth.debts.map((debt: DebtRecord) => <option value={debt.name}>
+                        lastDayOfMonth.debts.map((debt: DebtRecord) => <option key={debt.name} value={debt.name}>
                           {debt.name}
                         </option>)
                       }
