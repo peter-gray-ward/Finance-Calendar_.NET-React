@@ -98,6 +98,9 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 FinanceCalendarContext.RunSqlScript(builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new ArgumentNullException("DefaultConnection"), "./InitDatabase.sql"); // Added null check
 
 app.Run();

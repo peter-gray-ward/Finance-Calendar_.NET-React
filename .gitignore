@@ -7,3 +7,4 @@ node_modules
 *.user
 bin
 obj
+wwwroot

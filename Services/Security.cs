@@ -90,7 +90,6 @@ namespace FinanceCalendar.Services
             var account = DecodeToken(token);
 
             var user = await _context.Users
-                .AsNoTracking()
                 .SingleOrDefaultAsync(u => u.Id == account.UserId);
 
             if (user == null)
@@ -103,12 +102,10 @@ namespace FinanceCalendar.Services
 
             var expenses = await _context.Expenses
                 .Where(e => e.UserId == user.Id)
-                .AsNoTracking()
                 .ToListAsync();
 
             var debts = await _context.Debts
                 .Where(d => d.UserId == user.Id)
-                .AsNoTracking()
                 .ToListAsync();
 
             user.Account = new Account
