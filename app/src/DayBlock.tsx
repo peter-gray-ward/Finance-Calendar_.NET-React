@@ -94,7 +94,7 @@ export default function DayBlock(
     <div className="events">
       {
         day.events.map((event: IEvent, c: number) => (
-          <div className="event" id={`event-${ event.id }`} key={`${a}.${b}.${c}`}
+          <div className={`event${event.debtId ? ' debt-payment' : ''}`} id={`event-${ event.id }`} key={`${a}.${b}.${c}`}
               onClick={(e) => selectEvent(e, event)}>
             <span className={`${event.amount >= 0 ? 'positive' : 'negative'}`}>•</span> 
             <span className="summary">{ event.summary.replace('&nbsp;', '').replace('   ', '') }</span> 

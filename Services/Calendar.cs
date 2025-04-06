@@ -217,8 +217,8 @@ namespace FinanceCalendar.Services
         public async Task<ServiceResponse<List<List<Day>>>> UpdateCheckingBalance(User user, double checkingBalance)
         {
             user.CheckingBalance = checkingBalance;
-            await _context.SaveChangesAsync();
 
+            await _context.SaveChangesAsync();
             await CalculateEventTotals(user);
 
             try

@@ -53,68 +53,82 @@ export default function Outlook(
     return result;
   }, [calendar, innerWidth, user]);
 
-	return <section id="outlook">
-		{
-			groupedMonths.map((monthGroup: Day[][][], i: number) => {
-				return <div key={i} className="mini-month-row">
-					{
-						monthGroup.map((month: Day[][], j: number) => {
-              const monthIndex = month[2][1].month;
-              const lastDayOfMonth = findLastDayOfMonth(monthIndex, month, user);
-              const lastEventOfMonth = findLastEventOfMonth(monthIndex, month, user);
-              let monthFinalTotal = lastEventOfMonth.total.toFixed(0);
-              const inTheNegative = +monthFinalTotal < 0;
-              let debtBalance: number = debtView == 'All' 
-                  ? lastDayOfMonth.debts.map((d: DebtRecord) => d.balance).reduce((a, b) => a + b)
-                  : lastDayOfMonth.debts.find((d: DebtRecord) => d.name == debtView)!.balance;
-              return <div key={`${i}.${monthIndex}`} className="mini-month">
-  							<h2>{MONTHNAMES[monthIndex - 1]} {month[2][1].year}</h2>
-  							<div className="row">
-  								{['S','M','T','W','Th','F','Sa'].map(dow => <span key={dow} className="dow">{dow}</span>)}
-  							</div>
-                <div className="weeks">
-    							{
-    								month.map((week: Day[], k: number) => <div key={`${i}.${j}.${k}`} className="row">
-    									{
-    										week.map((day: Day) => {
-                          return <span key={`${i}.${j}.${k}.${day.dow}`} className={
-                            `day-date${day.isToday ? ' today' : ''}`
-                            + ` ${day.month == monthIndex ? '' : 'opaque'}`
-                          }>{day.date}</span>
-                        })
-    									}
-    								</div>)
-    							}
-                </div>
-                <div className="info-footer">
-                  <div>
-                    <select onChange={(e) => setDebtView(e.target.value)} 
-                      value={debtView}>
-                      <option value="All">All</option>
-                      {
-                        lastDayOfMonth.debts.map((debt: DebtRecord) => <option key={debt.name} value={debt.name}>
-                          {debt.name}
-                        </option>)
-                      }
-                    </select>
-                    <div className="checking-title">Checking</div>
+	return <>
+    <div className="outlook-control">
+      <div>
+        <div>
+          Debt:
+        </div>
+      </div>
+      <div>
+        <div>
+          <select onChange={(e) => setDebtView(e.target.value)} 
+            value={debtView}>
+            <option value="All">All</option>
+            {
+              user.account.debts.map((debt: DebtRecord) => <option key={debt.name} value={debt.name}>
+                {debt.name}
+              </option>)
+            }
+          </select>
+        </div>
+      </div>
+    </div>
+    <section id="outlook">
+  		{
+  			groupedMonths.map((monthGroup: Day[][][], i: number) => {
+  				return <div key={i} className="mini-month-row">
+  					{
+  						monthGroup.map((month: Day[][], j: number) => {
+                const monthIndex = month[2][1].month;
+                const lastDayOfMonth = findLastDayOfMonth(monthIndex, month, user);
+                const lastEventOfMonth = findLastEventOfMonth(monthIndex, month, user);
+                let monthFinalTotal = lastEventOfMonth.total.toFixed(0);
+                const inTheNegative = +monthFinalTotal < 0;
+                let debtBalance: number = debtView == 'All' 
+                    ? lastDayOfMonth.debts.map((d: DebtRecord) => d.balance).reduce((a, b) => a + b)
+                    : lastDayOfMonth.debts.find((d: DebtRecord) => d.name == debtView)!.balance;
+                return <div key={`${i}.${monthIndex}`} className="mini-month">
+    							<h2>{MONTHNAMES[monthIndex - 1]} {month[2][1].year}</h2>
+    							<div className="row">
+    								{['S','M','T','W','Th','F','Sa'].map(dow => <span key={dow} className="dow">{dow}</span>)}
+    							</div>
+                  <div className="weeks">
+      							{
+      								month.map((week: Day[], k: number) => <div key={`${i}.${j}.${k}`} className="row">
+      									{
+      										week.map((day: Day) => {
+                            return <span key={`${i}.${j}.${k}.${day.dow}`} className={
+                              `day-date${day.isToday ? ' today' : ''}`
+                              + ` ${day.month == monthIndex ? '' : 'opaque'}`
+                            }>{day.date}</span>
+                          })
+      									}
+      								</div>)
+      							}
                   </div>
-                  <div>
-                    <span className={debtBalance < 0 ? 'negative' : 'positive'}>
-                      {
-                        debtBalance < 0 ? '-$' + Math.abs(debtBalance).toFixed(0) : '$' + debtBalance.toFixed(0)
-                      }
-                    </span>
-                    <span className={inTheNegative ? 'negative' : 'positive'}>
-                      {inTheNegative ? '-$' + Math.abs(+monthFinalTotal) : '$' + monthFinalTotal}
-                    </span>
+                  <div className="info-footer">
+                    <div>
+                      <div>{debtView}</div>
+                      <div className="checking-title">Checking</div>
+                    </div>
+                    <div>
+                      <span className={debtBalance < 0 ? 'negative' : 'positive'}>
+                        {
+                          debtBalance < 0 ? '-$' + Math.abs(debtBalance).toFixed(0) : '$' + debtBalance.toFixed(0)
+                        }
+                      </span>
+                      <span className={inTheNegative ? 'negative' : 'positive'}>
+                        {inTheNegative ? '-$' + Math.abs(+monthFinalTotal) : '$' + monthFinalTotal}
+                      </span>
+                    </div>
                   </div>
-                </div>
-  						</div>
-            })
-					}
-  			</div>
-			})
-		}
-	</section>
+    						</div>
+              })
+  					}
+    			</div>
+  			})
+  		}
+  	</section>
+  </>
 }
